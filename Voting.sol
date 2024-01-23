@@ -7,7 +7,7 @@ import {IVerifier} from "./IVerifier.sol";
 
 contract Voting is PoseidonIMT {
 
-    mapping(uint256 => uint256) votesPerCandidate;
+    mapping(uint256 => uint256) public votesPerCandidate;
     
     enum VotingStatus {
         NOT_STARTED,
@@ -50,4 +50,10 @@ contract Voting is PoseidonIMT {
 
         votesPerCandidate[_vote]++;
     }
+
+    // Unsafe, for testing purposes only
+    function addRoot(bytes32 _root) public {
+        rootsHistory[_root] = true;
+    }
+
 }
