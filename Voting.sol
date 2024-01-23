@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
-
-import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
+pragma solidity ^0.8.16;
 
 import {PoseidonIMT} from "./utils/PoseidonIMT.sol";
+import {Groth16Verifier} from "./Verifier.sol";
+import {IVerifier} from "./IVerifier.sol";
 
-contract Registration {
+contract Voting is PoseidonIMT {
+
+    mapping(uint256 => uint256) votesPerCandidate;
     
     enum VotingStatus {
         NOT_STARTED,
@@ -35,11 +35,19 @@ contract Registration {
     }
 
     function vote(
-        bytes32 nullifierHash_,
-        bytes32 root_,
-        VerifierHelper.ProofPoints calldata proof_,
-        VotingOption votingOption_
-    ) {
+        uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[3] calldata _pubSignals
+    ) external {
+        bytes32 _root = bytes32(_pubSignals[0]);
+        bytes32 _nullifier = bytes32(_pubSignals[1]);
+        uint256 _vote = _pubSignals[2];
+        
+        require(!nullifies[_nullifier], "Double voting: nullifier already exists");
+        require(rootsHistory[_root], "Root does not exist");
 
+        bool isOk = IVerifier(verifier).verifyProof(_pA, _pB, _pC, _pubSignals);
+
+        require(isOk == true, "Proof verification failed");
+
+        votesPerCandidate[_vote]++;
     }
 }

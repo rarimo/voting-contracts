@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {PoseidonUnit1L, PoseidonUnit2L} from "contracts/contracts/lib/Poseidon.sol";
+import {PoseidonUnit1L, PoseidonUnit2L} from "@iden3/contracts/lib/Poseidon.sol";
 
 import {IncrementalMerkleTree} from "./IncrementalMerkleTree.sol";
 

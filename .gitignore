@@ -1,2 +1,5 @@
 contracts/
 solidity-lib/
+artifacts/
+.deps
+.git
