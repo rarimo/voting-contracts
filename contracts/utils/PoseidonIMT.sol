@@ -15,6 +15,14 @@ contract PoseidonIMT {
         bytes32Tree.setHashers(_hash1, _hash2);
     }
 
+    function getRoot() public view returns (bytes32) {
+        return bytes32Tree.root();
+    }
+
+    function _add(bytes32 element_) internal {
+        bytes32Tree.add(element_);
+    }
+
     function _hash1(bytes32 element1_) internal pure returns (bytes32) {
         return bytes32(PoseidonUnit1L.poseidon([uint256(element1_)]));
     }
