@@ -3,11 +3,17 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
+import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
+
 import {IVerifier} from "./interfaces/IVerifier.sol";
 
 import {PoseidonIMT} from "./utils/PoseidonIMT.sol";
 
 contract Voting is PoseidonIMT, Ownable {
+    using TypeCaster for *; // TypeCaster library for type conversions.
+    using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
+
     enum VotingStatus {
         NOT_STARTED,
         REGISTRATION,
@@ -15,8 +21,11 @@ contract Voting is PoseidonIMT, Ownable {
         ENDED
     }
 
+    /// Address of the verifier contract for the registration proof (zk-SNARK)
+    address public registerVerifier;
+
     /// Address of the verifier contract for the anonymous inclusion proof (zk-SNARK)
-    address public verifier;
+    address public voteVerifier;
 
     mapping(uint256 => uint256) public votesPerCandidate;
 
@@ -29,39 +38,59 @@ contract Voting is PoseidonIMT, Ownable {
     /// Roots for zk proof anchoring to some existed MT root
     mapping(bytes32 => bool) public rootsHistory;
 
-    event VotingRegistration(
-        uint256 indexed identifierPosition,
-        bytes32 identifier,
-        uint256 blockNumber
-    );
+    event UserRegistered(bytes32 commitment, uint256 blockNumber);
+    event UserVoted(bytes32 root, bytes32 nullifierHash, uint256 voteId, uint256 blockNumber);
 
     constructor(
-        address verifier_,
+        address voteVerifier_,
+        address registerVerifier_,
         uint256 treeHeight_
     ) PoseidonIMT(treeHeight_) Ownable(msg.sender) {
-        verifier = verifier_;
+        voteVerifier = voteVerifier_;
+        registerVerifier = registerVerifier_;
+    }
+
+    function registerForVoting(
+        bytes32 commitment_,
+        VerifierHelper.ProofPoints calldata proof_
+    ) external {
+        require(!commitments[commitment_], "Voting: commitment already exists");
+
+        require(
+            registerVerifier.verifyProofSafe([uint256(commitment_)].asDynamic(), proof_, 1),
+            "Voting: Invalid vote proof"
+        );
+
+        _add(commitment_);
+        commitments[commitment_] = true;
+        rootsHistory[getRoot()] = true;
+
+        emit UserRegistered(commitment_, block.number);
     }
 
     function vote(
-        uint[2] calldata pA_,
-        uint[2][2] calldata pB_,
-        uint[2] calldata pC_,
-        uint[3] calldata pubSignals_
+        bytes32 root_,
+        bytes32 nullifierHash_,
+        uint256 voteId_,
+        VerifierHelper.ProofPoints calldata proof_
     ) external {
-        bytes32 root_ = bytes32(pubSignals_[0]);
-        bytes32 nullifier_ = bytes32(pubSignals_[1]);
-        uint256 vote_ = pubSignals_[2];
+        require(!nullifies[nullifierHash_], "Voting: nullifier already used");
+        require(rootsHistory[root_], "Vote: root doesn't exist");
 
-        require(!nullifies[nullifier_], "Double voting: nullifier already exists");
-        require(rootsHistory[root_], "Root does not exist");
+        require(
+            voteVerifier.verifyProofSafe(
+                [uint256(root_), uint256(nullifierHash_), voteId_].asDynamic(),
+                proof_,
+                3
+            ),
+            "Voting: Invalid vote proof"
+        );
 
-        bool success_ = IVerifier(verifier).verifyProof(pA_, pB_, pC_, pubSignals_);
+        nullifies[nullifierHash_] = true;
 
-        require(success_, "Proof verification failed");
+        votesPerCandidate[voteId_]++;
 
-        nullifies[nullifier_] = true;
-
-        votesPerCandidate[vote_]++;
+        emit UserVoted(root_, nullifierHash_, voteId_, block.number);
     }
 
     function addRoot(bytes32 root_) external onlyOwner {
