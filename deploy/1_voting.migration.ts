@@ -1,11 +1,20 @@
 import { Deployer, Reporter } from "@solarity/hardhat-migrate";
 
-import { Groth16Verifier__factory, Voting__factory } from "@ethers-v6";
+import { PoseidonVerifier__factory, VoteVerifier__factory, Voting__factory } from "@ethers-v6";
 
 export = async (deployer: Deployer) => {
-  const verifier = await deployer.deploy(Groth16Verifier__factory);
+  const voteVerifier = await deployer.deploy(VoteVerifier__factory);
+  const registrationVerifier = await deployer.deploy(PoseidonVerifier__factory);
 
-  const voting = await deployer.deploy(Voting__factory, [await verifier.getAddress(), 20]);
+  const voting = await deployer.deploy(Voting__factory, [
+    await voteVerifier.getAddress(),
+    await registrationVerifier.getAddress(),
+    20,
+  ]);
 
-  Reporter.reportContracts(["Verifier", await verifier.getAddress()], ["Voting", await voting.getAddress()]);
+  Reporter.reportContracts(
+    ["Voting", await voting.getAddress()],
+    ["VoteVerifier", await voteVerifier.getAddress()],
+    ["PoseidonVerifier", await registrationVerifier.getAddress()],
+  );
 };
