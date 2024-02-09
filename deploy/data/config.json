@@ -1,0 +1,31 @@
+{
+  "validatorContractInfo": {
+    "validatorAddr": "",
+    "identitiesStatesUpdateTime": "3600"
+  },
+  "stateContractInfo": {
+    "stateAddr": "0xD843...889",
+    "stateInitParams": {
+      "signer": "0xf39F...266",
+      "sourceStateContract": "0xf39F...266",
+      "sourceChainName": "Rarimo",
+      "chainName": "Sepolia"
+    }
+  },
+  "poseidonFacade": "0x4EE6...07B",
+  "zkpQueriesStorage": "",
+  "zkpQueries": [
+    {
+      "queryId": "SBT_IDENTITY_PROOF",
+      "validatorAddr": "",
+      "query": {
+        "schema": "26846794803646269268739361127897291025",
+        "claimPathKey": "16153502378554866159038850585713705546745830858436223350513476757548188765156",
+        "operator": "1",
+        "value": ["1"],
+        "queryHash": "0",
+        "circuitId": "credentialAtomicQueryMTPV2OnChain"
+      }
+    }
+  ]
+}
