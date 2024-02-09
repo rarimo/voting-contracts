@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.16;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -45,7 +45,7 @@ contract Voting is PoseidonIMT, Ownable {
         address voteVerifier_,
         address registerVerifier_,
         uint256 treeHeight_
-    ) PoseidonIMT(treeHeight_) Ownable(msg.sender) {
+    ) PoseidonIMT(treeHeight_) {
         voteVerifier = voteVerifier_;
         registerVerifier = registerVerifier_;
     }

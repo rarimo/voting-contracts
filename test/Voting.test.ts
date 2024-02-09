@@ -152,9 +152,9 @@ describe("Voting", () => {
 
   describe("#addRoot", () => {
     it("should record a root in history only by the owner", async () => {
-      await expect(voting.connect(FIRST).addRoot(ethers.ZeroHash))
-        .to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount")
-        .withArgs(FIRST.address);
+      await expect(voting.connect(FIRST).addRoot(ethers.ZeroHash)).to.be.rejectedWith(
+        "Ownable: caller is not the owner",
+      );
 
       await expect(voting.addRoot(ethers.ZeroHash)).to.be.eventually.fulfilled;
     });
