@@ -73,7 +73,7 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
         }
     }
 
-    function _transitState(TransitStateParams calldata transitStateParams_) internal {
+    function _transitState(TransitStateParams memory transitStateParams_) internal {
         ILightweightState lightweightState_ = zkpQueriesStorage.lightweightState();
         ILightweightState.GistRootData memory currentGISTRootData_ = lightweightState_
             .getCurrentGISTRootInfo();
@@ -91,33 +91,6 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
                 transitStateParams_.proof
             );
         }
-    }
-
-    function _verify(
-        string memory queryId_,
-        ProveIdentityParams calldata proveIdentityParams_
-    ) internal view virtual {
-        require(
-            zkpQueriesStorage.isQueryExists(queryId_),
-            "BaseVerifier: ZKP Query does not exist for passed query id."
-        );
-
-        IQueryValidator queryValidator_ = IQueryValidator(
-            zkpQueriesStorage.getQueryValidator(queryId_)
-        );
-        uint256 queryHash_ = zkpQueriesStorage.getStoredQueryHash(queryId_);
-
-        queryValidator_.verify(
-            proveIdentityParams_.statesMerkleData,
-            proveIdentityParams_.inputs,
-            proveIdentityParams_.a,
-            proveIdentityParams_.b,
-            proveIdentityParams_.c,
-            queryHash_
-        );
-
-        _checkAllowedIssuer(queryId_, proveIdentityParams_.statesMerkleData.issuerId);
-        _checkChallenge(proveIdentityParams_.inputs[queryValidator_.getChallengeInputIndex()]);
     }
 
     function _checkAllowedIssuer(string memory queryId_, uint256 issuerId_) internal view virtual {

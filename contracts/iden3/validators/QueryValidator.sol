@@ -47,7 +47,7 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
 
     function verify(
         ILightweightState.StatesMerkleData calldata statesMerkleData_,
-        uint256[] calldata inputs_,
+        uint256[] memory inputs_,
         uint256[2] calldata a_,
         uint256[2][2] calldata b_,
         uint256[2] calldata c_,
@@ -85,7 +85,7 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
     function getChallengeInputIndex() external pure virtual returns (uint256);
 
     function _getInputValidationParameters(
-        uint256[] calldata inputs_
+        uint256[] memory inputs_
     ) internal pure virtual returns (ValidationParams memory);
 
     function _checkGistRoot(uint256 gistRoot_) internal view {

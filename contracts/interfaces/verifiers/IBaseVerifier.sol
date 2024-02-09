@@ -27,7 +27,7 @@ interface IBaseVerifier {
 
     function updateAllowedIssuers(
         uint256 schema_,
-        uint256[] calldata issuerIds_,
+        uint256[] memory issuerIds_,
         bool isAdding_
     ) external;
 

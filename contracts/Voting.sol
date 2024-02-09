@@ -7,6 +7,8 @@ import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
 import {IVerifier} from "./interfaces/IVerifier.sol";
+import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
+import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
 
 import {PoseidonIMT} from "./utils/PoseidonIMT.sol";
 
@@ -22,7 +24,7 @@ contract Voting is PoseidonIMT, Ownable {
     }
 
     /// Address of the verifier contract for the registration proof (zk-SNARK)
-    address public registerVerifier;
+    IRegisterVerifier public registerVerifier;
 
     /// Address of the verifier contract for the anonymous inclusion proof (zk-SNARK)
     address public voteVerifier;
@@ -38,7 +40,11 @@ contract Voting is PoseidonIMT, Ownable {
     /// Roots for zk proof anchoring to some existed MT root
     mapping(bytes32 => bool) public rootsHistory;
 
-    event UserRegistered(bytes32 commitment, uint256 blockNumber);
+    event UserRegistered(
+        IBaseVerifier.ProveIdentityParams proveIdentityParams,
+        IRegisterVerifier.RegisterProofParams registerProofParams,
+        uint256 blockNumber
+    );
     event UserVoted(bytes32 root, bytes32 nullifierHash, uint256 voteId, uint256 blockNumber);
 
     constructor(
@@ -47,32 +53,44 @@ contract Voting is PoseidonIMT, Ownable {
         uint256 treeHeight_
     ) PoseidonIMT(treeHeight_) {
         voteVerifier = voteVerifier_;
-        registerVerifier = registerVerifier_;
+        registerVerifier = IRegisterVerifier(registerVerifier_);
     }
 
     function registerForVoting(
-        bytes32 commitment_,
-        VerifierHelper.ProofPoints calldata proof_
+        IBaseVerifier.ProveIdentityParams memory proveIdentityParams_,
+        IRegisterVerifier.RegisterProofParams memory registerProofParams_,
+        IBaseVerifier.TransitStateParams memory transitStateParams_,
+        bool isTransitState_
     ) external {
+        bytes32 commitment_ = registerProofParams_.commitment;
+
         require(!commitments[commitment_], "Voting: commitment already exists");
 
-        require(
-            registerVerifier.verifyProofSafe([uint256(commitment_)].asDynamic(), proof_, 1),
-            "Voting: Invalid vote proof"
-        );
+        IRegisterVerifier.RegisterProofInfo memory registerProofInfo_ = IRegisterVerifier
+            .RegisterProofInfo({registerProofParams: registerProofParams_, votingId: 0});
+
+        if (isTransitState_) {
+            registerVerifier.transitStateAndProveRegistration(
+                proveIdentityParams_,
+                registerProofInfo_,
+                transitStateParams_
+            );
+        } else {
+            registerVerifier.proveRegistration(proveIdentityParams_, registerProofInfo_);
+        }
 
         _add(commitment_);
         commitments[commitment_] = true;
         rootsHistory[getRoot()] = true;
 
-        emit UserRegistered(commitment_, block.number);
+        emit UserRegistered(proveIdentityParams_, registerProofParams_, block.number);
     }
 
     function vote(
         bytes32 root_,
         bytes32 nullifierHash_,
         uint256 voteId_,
-        VerifierHelper.ProofPoints calldata proof_
+        VerifierHelper.ProofPoints memory proof_
     ) external {
         require(!nullifies[nullifierHash_], "Voting: nullifier already used");
         require(rootsHistory[root_], "Vote: root doesn't exist");

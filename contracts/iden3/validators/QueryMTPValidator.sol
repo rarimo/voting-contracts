@@ -36,7 +36,7 @@ contract QueryMTPValidator is QueryValidator {
     }
 
     function _getInputValidationParameters(
-        uint256[] calldata inputs_
+        uint256[] memory inputs_
     ) internal pure override returns (ValidationParams memory) {
         return ValidationParams(inputs_[2], inputs_[5], inputs_[6], inputs_[7], inputs_[9]);
     }

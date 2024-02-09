@@ -69,14 +69,14 @@ interface IZKPQueriesStorage {
      * @param queryId_ The query ID
      * @return The QueryInfo structure with query information
      */
-    function getQueryInfo(string calldata queryId_) external view returns (QueryInfo memory);
+    function getQueryInfo(string memory queryId_) external view returns (QueryInfo memory);
 
     /**
      * @notice Function to get the query validator for a given query ID
      * @param queryId_ The query ID
      * @return The query validator contract address
      */
-    function getQueryValidator(string calldata queryId_) external view returns (address);
+    function getQueryValidator(string memory queryId_) external view returns (address);
 
     /**
      * @notice Function to get the stored circuit query for a given query ID

@@ -20,7 +20,7 @@ interface IQueryValidator {
     function setIdentitesStatesUpdateTime(uint256 newIdentitesStatesUpdateTime_) external;
 
     function verify(
-        ILightweightState.StatesMerkleData calldata statesMerkleData_,
+        ILightweightState.StatesMerkleData memory statesMerkleData_,
         uint256[] memory inputs_,
         uint256[2] memory a_,
         uint256[2][2] memory b_,

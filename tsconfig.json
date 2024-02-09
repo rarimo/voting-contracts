@@ -11,6 +11,7 @@
       "@/*": ["./*"],
       "@ethers-v6": ["./generated-types"],
       "@test-helpers": ["./test/helpers"],
+      "@deploy-helper": ["./deploy/helpers"],
     },
   },
 }

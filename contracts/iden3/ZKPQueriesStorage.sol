@@ -70,12 +70,12 @@ contract ZKPQueriesStorage is IZKPQueriesStorage, OwnableUpgradeable, UUPSUpgrad
     }
 
     function getQueryInfo(
-        string calldata queryId_
+        string memory queryId_
     ) external view override returns (QueryInfo memory) {
         return _queriesInfo[queryId_];
     }
 
-    function getQueryValidator(string calldata queryId_) external view override returns (address) {
+    function getQueryValidator(string memory queryId_) external view override returns (address) {
         return _queriesInfo[queryId_].queryValidator;
     }
 
