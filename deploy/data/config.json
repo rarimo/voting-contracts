@@ -1,22 +1,26 @@
 {
   "validatorContractInfo": {
-    "validatorAddr": "",
+    "validatorAddr": "0x0000000000000000000000000000000000000000",
     "identitiesStatesUpdateTime": "3600"
   },
   "stateContractInfo": {
-    "stateAddr": "0xD843...889",
+    "stateAddr": "0x0000000000000000000000000000000000000000",
     "stateInitParams": {
-      "signer": "0xf39F...266",
-      "sourceStateContract": "0xf39F...266",
+      "signer": "0xf41ceE234219D6cc3d90A6996dC3276aD378cfCF",
+      "sourceStateContract": "0xf41ceE234219D6cc3d90A6996dC3276aD378cfCF",
       "sourceChainName": "Rarimo",
       "chainName": "Sepolia"
-    }
+    },
+    "isLightweight": false
   },
-  "poseidonFacade": "0x4EE6...07B",
-  "zkpQueriesStorage": "",
+  "poseidonFacade": "0x0000000000000000000000000000000000000000",
+  "zkpQueriesStorage": "0x0000000000000000000000000000000000000000",
+  "registerVerifierInfo": {
+    "registerVerifierAddr": "0x0000000000000000000000000000000000000000"
+  },
   "zkpQueries": [
     {
-      "queryId": "SBT_IDENTITY_PROOF",
+      "queryId": "REGISTER_PROOF",
       "validatorAddr": "",
       "query": {
         "schema": "26846794803646269268739361127897291025",

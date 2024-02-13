@@ -4,6 +4,7 @@ import { ZERO_ADDR } from "@/scripts/utils/constants";
 export type Config = {
   validatorContractInfo: ValidatorContractInfo;
   stateContractInfo: StateContractInfo;
+  registerVerifierInfo: RegisterVerifierInfo;
   poseidonFacade?: string;
   zkpQueriesStorage?: string;
   zkpQueries: ZKPQueryInfo[];
@@ -17,6 +18,7 @@ export type ValidatorContractInfo = {
 export type StateContractInfo = {
   stateAddr?: string;
   stateInitParams?: StateInitParams;
+  isLightweight: boolean | string;
 };
 
 export type StateInitParams = {
@@ -24,6 +26,10 @@ export type StateInitParams = {
   sourceStateContract: string;
   sourceChainName: string;
   chainName: string;
+};
+
+export type RegisterVerifierInfo = {
+  registerVerifierAddr?: string;
 };
 
 export type ZKPQueryInfo = {

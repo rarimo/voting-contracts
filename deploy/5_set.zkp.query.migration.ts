@@ -7,7 +7,7 @@ import { IZKPQueriesStorage, ZKPQueriesStorage__factory } from "@ethers-v6";
 export = async (deployer: Deployer) => {
   const config: Config = parseConfig();
 
-  const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory);
+  const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, "ZKPQueriesStorage Proxy");
 
   let validator = await getDeployedQueryValidatorContract(deployer);
 

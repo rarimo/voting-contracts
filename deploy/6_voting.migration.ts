@@ -1,35 +1,42 @@
+import { ethers } from "hardhat";
+
 import { Deployer, Reporter } from "@solarity/hardhat-migrate";
 
-// @ts-ignore
-import { poseidonContract } from "circomlibjs";
-
-import { PoseidonVerifier__factory, VoteVerifier__factory, Voting__factory } from "@ethers-v6";
+import {
+  ERC1967Proxy__factory,
+  VoteVerifier__factory,
+  Voting__factory,
+  VotingFactory__factory,
+  VotingRegistry__factory,
+} from "@ethers-v6";
 
 export = async (deployer: Deployer) => {
+  let votingRegistry = await deployer.deploy(VotingRegistry__factory);
+  let votingFactory = await deployer.deploy(VotingFactory__factory);
+
+  const votingRegistryProxy = await deployer.deploy(ERC1967Proxy__factory, [await votingRegistry.getAddress(), "0x"], {
+    name: "VotingRegistry Proxy",
+  });
+  const votingFactoryProxy = await deployer.deploy(ERC1967Proxy__factory, [await votingFactory.getAddress(), "0x"], {
+    name: "VotingFactory Proxy",
+  });
+
+  votingRegistry = await deployer.deployed(VotingRegistry__factory, await votingRegistryProxy.getAddress());
+  votingFactory = await deployer.deployed(VotingFactory__factory, await votingFactoryProxy.getAddress());
+
+  await votingRegistry.__VotingRegistry_init(await votingFactory.getAddress());
+  await votingFactory.__VotingFactory_init(await votingRegistry.getAddress());
+
   const voteVerifier = await deployer.deploy(VoteVerifier__factory);
-  const registrationVerifier = await deployer.deploy(PoseidonVerifier__factory);
 
-  await deployer.deploy({
-    abi: poseidonContract.generateABI(1),
-    bytecode: poseidonContract.createCode(1),
-    contractName: "contracts/libs/Poseidon.sol:PoseidonUnit1L",
-  });
+  const voting = await deployer.deploy(Voting__factory, [await voteVerifier.getAddress(), ethers.ZeroAddress, 80]);
 
-  await deployer.deploy({
-    abi: poseidonContract.generateABI(2),
-    bytecode: poseidonContract.createCode(2),
-    contractName: "contracts/libs/Poseidon.sol:PoseidonUnit2L",
-  });
-
-  const voting = await deployer.deploy(Voting__factory, [
-    await voteVerifier.getAddress(),
-    await registrationVerifier.getAddress(),
-    20,
-  ]);
+  await votingRegistry.setNewImplementations(["Simple Voting"], [await voting.getAddress()]);
 
   Reporter.reportContracts(
-    ["Voting", await voting.getAddress()],
+    ["VotingRegistry", await votingRegistry.getAddress()],
+    ["VotingFactory", await votingFactory.getAddress()],
+    ["Simple Voting", await voting.getAddress()],
     ["VoteVerifier", await voteVerifier.getAddress()],
-    ["PoseidonVerifier", await registrationVerifier.getAddress()],
   );
 };

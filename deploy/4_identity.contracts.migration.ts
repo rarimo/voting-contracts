@@ -17,16 +17,17 @@ export = async (deployer: Deployer) => {
 
   const poseidonFacade = await deployer.deployed(PoseidonFacade__factory);
 
-  const stateContractInfo = ["LightweightState", await (await getDeployedStateContract(deployer)).getAddress()];
+  const stateContractInfo = ["LightweightState", await (await getDeployedStateContract(deployer, config)).getAddress()];
 
   let zkpQueriesStorage;
 
   if (isZeroAddr(config.zkpQueriesStorage)) {
     const zkpQueriesStorageImpl = await deployer.deploy(ZKPQueriesStorage__factory);
-    const zkpQueriesStorageProxy = await deployer.deploy(ERC1967Proxy__factory, [
-      await zkpQueriesStorageImpl.getAddress(),
-      "0x",
-    ]);
+    const zkpQueriesStorageProxy = await deployer.deploy(
+      ERC1967Proxy__factory,
+      [await zkpQueriesStorageImpl.getAddress(), "0x"],
+      { name: "ZKPQueriesStorage Proxy" },
+    );
 
     zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, await zkpQueriesStorageProxy.getAddress());
 
