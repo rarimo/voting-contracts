@@ -12,7 +12,7 @@ import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
 
 import {BaseVerifier} from "./BaseVerifier.sol";
 
-import {PoseidonUnit3L} from "../../libs/Poseidon.sol";
+import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
 
 contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     using Vector for Vector.UintVector;

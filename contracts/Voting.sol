@@ -1,67 +1,110 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
+import {IVoting} from "./interfaces/IVoting.sol";
 import {IVerifier} from "./interfaces/IVerifier.sol";
 import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
 import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
 
-import {PoseidonIMT} from "./utils/PoseidonIMT.sol";
+import {PoseidonSMT} from "./utils/PoseidonSMT.sol";
 
-contract Voting is PoseidonIMT, Ownable {
+/**
+ * @title Voting
+ */
+contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
     using TypeCaster for *; // TypeCaster library for type conversions.
     using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
 
-    enum VotingStatus {
-        NOT_STARTED,
-        REGISTRATION,
-        VOTING,
-        ENDED
-    }
+    /**
+     * @notice The verifier contract for the registration proof (zk-SNARK)
+     */
+    IRegisterVerifier public immutable registerVerifier;
 
-    /// Address of the verifier contract for the registration proof (zk-SNARK)
-    IRegisterVerifier public registerVerifier;
+    /**
+     * @notice The verifier contract for the voting proof (zk-SNARK)
+     */
+    address public immutable voteVerifier;
 
-    /// Address of the verifier contract for the anonymous inclusion proof (zk-SNARK)
-    address public voteVerifier;
+    /**
+     * @notice The maximum depth of the SMT tree
+     */
+    uint256 public immutable smtTreeMaxDepth;
 
-    mapping(uint256 => uint256) public votesPerCandidate;
+    /**
+     * @notice The voting information
+     */
+    VotingInfo public votingInfo;
 
-    /// Commitments to ensure that no registration with the same identifier occurs
+    /**
+     * @notice The commitments to ensure that no registration with the same identifier occurs
+     */
     mapping(bytes32 => bool) public commitments;
 
-    /// Nullifiers to prevent double voting
+    /**
+     * @notice The nullifiers to prevent double voting
+     */
     mapping(bytes32 => bool) public nullifies;
 
-    /// Roots for zk proof anchoring to some existed MT root
+    /**
+     * @notice The roots history to ensure that the root exists
+     */
     mapping(bytes32 => bool) public rootsHistory;
 
-    event UserRegistered(
-        IBaseVerifier.ProveIdentityParams proveIdentityParams,
-        IRegisterVerifier.RegisterProofParams registerProofParams,
-        uint256 blockNumber
-    );
-    event UserVoted(bytes32 root, bytes32 nullifierHash, uint256 voteId, uint256 blockNumber);
+    /**
+     * @notice The votes per candidate
+     */
+    mapping(uint256 => uint256) public votesPerCandidate;
 
-    constructor(
-        address voteVerifier_,
-        address registerVerifier_,
-        uint256 treeHeight_
-    ) PoseidonIMT(treeHeight_) {
+    /**
+     * @notice The constructor of the Voting contract implementation.
+     * All of the parameters are immutable therefore will be included to the bytecode.
+     */
+    constructor(address voteVerifier_, address registerVerifier_, uint256 treeHeight_) {
         voteVerifier = voteVerifier_;
         registerVerifier = IRegisterVerifier(registerVerifier_);
+
+        smtTreeMaxDepth = treeHeight_;
     }
 
+    /**
+     * @inheritdoc IVoting
+     */
+    function __Voting_init(VotingParams calldata votingParams_) external initializer {
+        __Ownable_init();
+        __PoseidonSMT_init(smtTreeMaxDepth);
+
+        votingInfo.remark = votingParams_.remark;
+        votingInfo.values.commitmentStartTime = votingParams_.commitmentStart;
+        votingInfo.values.votingStartTime =
+            votingParams_.commitmentStart +
+            votingParams_.commitmentPeriod;
+        votingInfo.values.votingEndTime =
+            votingInfo.values.votingStartTime +
+            votingParams_.votingPeriod;
+
+        emit VotingInitialized(msg.sender, votingParams_);
+    }
+
+    /**
+     * @inheritdoc IVoting
+     */
     function registerForVoting(
         IBaseVerifier.ProveIdentityParams memory proveIdentityParams_,
         IRegisterVerifier.RegisterProofParams memory registerProofParams_,
         IBaseVerifier.TransitStateParams memory transitStateParams_,
         bool isTransitState_
     ) external {
+        require(
+            getProposalStatus() == VotingStatus.COMMITMENT,
+            "Voting: the voting must be in the commitment state to register"
+        );
+
         bytes32 commitment_ = registerProofParams_.commitment;
 
         require(!commitments[commitment_], "Voting: commitment already exists");
@@ -83,15 +126,23 @@ contract Voting is PoseidonIMT, Ownable {
         commitments[commitment_] = true;
         rootsHistory[getRoot()] = true;
 
-        emit UserRegistered(proveIdentityParams_, registerProofParams_, block.number);
+        emit UserRegistered(msg.sender, proveIdentityParams_, registerProofParams_, block.number);
     }
 
+    /**
+     * @inheritdoc IVoting
+     */
     function vote(
         bytes32 root_,
         bytes32 nullifierHash_,
         uint256 voteId_,
         VerifierHelper.ProofPoints memory proof_
     ) external {
+        require(
+            getProposalStatus() == VotingStatus.PENDING,
+            "Voting: the voting must be in the pending state to vote"
+        );
+
         require(!nullifies[nullifierHash_], "Voting: nullifier already used");
         require(rootsHistory[root_], "Vote: root doesn't exist");
 
@@ -108,9 +159,36 @@ contract Voting is PoseidonIMT, Ownable {
 
         votesPerCandidate[voteId_]++;
 
-        emit UserVoted(root_, nullifierHash_, voteId_, block.number);
+        emit UserVoted(msg.sender, root_, nullifierHash_, voteId_, block.number);
     }
 
+    /**
+     * @inheritdoc IVoting
+     */
+    function getProposalStatus() public view returns (VotingStatus) {
+        if (votingInfo.values.commitmentStartTime == 0) {
+            return VotingStatus.NONE;
+        }
+
+        if (block.timestamp < votingInfo.values.commitmentStartTime) {
+            return VotingStatus.NOT_STARTED;
+        }
+
+        if (block.timestamp < votingInfo.values.votingStartTime) {
+            return VotingStatus.COMMITMENT;
+        }
+
+        if (block.timestamp < votingInfo.values.votingEndTime) {
+            return VotingStatus.PENDING;
+        }
+
+        return VotingStatus.ENDED;
+    }
+
+    /**
+     * @dev The temporary function (only needed to speed up development process and testing) to add the root to the history
+     * Will be removed.
+     */
     function addRoot(bytes32 root_) external onlyOwner {
         rootsHistory[root_] = true;
     }
