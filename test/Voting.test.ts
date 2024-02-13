@@ -1,23 +1,16 @@
+import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { MerkleTree } from "merkletreejs";
-
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import {
-  buildSparseMerkleTree,
-  getBytes32PoseidonHash,
-  getLazyProof,
-  getPoseidon,
-  getPositionalProof,
-  poseidonHash,
-  Reverter,
-} from "@test-helpers";
+import { deepClone, VotingStatus } from "@scripts";
 
-import { Voting } from "@ethers-v6";
-import { expect } from "chai";
-import { generateSecrets, getCommitment, getPreImageZKP, getZKP, SecretPair } from "@/test/helpers/zkp-helper";
+import { getPoseidon, poseidonHash, Reverter, generateSecrets, getCommitment, getZKP, SecretPair } from "@test-helpers";
+
+import { IVoting, VoteVerifier, VotingMock } from "@ethers-v6";
 import { VerifierHelper } from "@/generated-types/contracts/Voting";
+import { IBaseVerifier, IRegisterVerifier } from "@/generated-types/contracts/mock/VotingMock";
 
 describe("Voting", () => {
   const reverter = new Reverter();
@@ -25,26 +18,64 @@ describe("Voting", () => {
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
 
-  let voting: Voting;
+  let voting: VotingMock;
+  let votingVerifier: VoteVerifier;
 
-  let treeHeight = 20n;
+  let treeHeight = 80n;
+
+  let defaultVotingParams: IVoting.VotingParamsStruct = {
+    remark: "Voting remark",
+    commitmentStart: 0,
+    commitmentPeriod: 60,
+    votingPeriod: 60,
+  };
+
+  let defaultProveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
+    statesMerkleData: {
+      issuerId: 0,
+      issuerState: 0,
+      merkleProof: [],
+      createdAtTimestamp: 0,
+    },
+    inputs: [],
+    a: [0, 0],
+    b: [
+      [0, 0],
+      [0, 0],
+    ],
+    c: [0, 0],
+  };
+
+  let defaultTransitionStateParams: IBaseVerifier.TransitStateParamsStruct = {
+    newIdentitiesStatesRoot: ethers.ZeroHash,
+    gistData: {
+      root: ethers.ZeroHash,
+      createdAtTimestamp: 0,
+    },
+    proof: "0x",
+  };
+
+  let defaultRegisterVerifierParams: IRegisterVerifier.RegisterProofParamsStruct = {
+    isAdult: false,
+    issuingAuthority: ethers.ZeroHash,
+    commitment: ethers.ZeroHash,
+    documentNullifier: ethers.ZeroHash,
+  };
 
   before("setup", async () => {
     [OWNER, FIRST] = await ethers.getSigners();
 
-    const Verifier = await ethers.getContractFactory("VoteVerifier");
-    const voteVerifier = await Verifier.deploy();
+    const VotingVerifier = await ethers.getContractFactory("VoteVerifier");
+    votingVerifier = await VotingVerifier.deploy();
 
-    const PoseidonVerifier = await ethers.getContractFactory("PoseidonVerifier");
-    const poseidonVerifier = await PoseidonVerifier.deploy();
-
-    const Voting = await ethers.getContractFactory("Voting", {
+    const Voting = await ethers.getContractFactory("VotingMock", {
       libraries: {
         PoseidonUnit1L: await (await getPoseidon(1)).getAddress(),
         PoseidonUnit2L: await (await getPoseidon(2)).getAddress(),
+        PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
       },
     });
-    voting = await Voting.deploy(await voteVerifier.getAddress(), await poseidonVerifier.getAddress(), treeHeight);
+    voting = await Voting.deploy(await votingVerifier.getAddress(), ethers.ZeroAddress, treeHeight);
 
     await reverter.snapshot();
   });
@@ -52,46 +83,83 @@ describe("Voting", () => {
   afterEach(reverter.revert);
 
   describe("#access", () => {
+    it("should not initialize the contract twice", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+      };
+
+      await voting.__Voting_init(votingParams);
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
+        "Initializable: contract is already initialized",
+      );
+    });
+  });
+
+  describe("#initialize", () => {
     it("should correctly initialize the contract", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+      };
+
+      await voting.__Voting_init(votingParams);
+
+      const actualVotingParams = await voting.votingInfo();
+      expect(actualVotingParams.remark).to.equal(votingParams.remark);
+      expect(actualVotingParams["1"].commitmentStartTime).to.equal(votingParams.commitmentStart);
+      expect(actualVotingParams["1"].votingStartTime).to.equal(
+        BigInt(votingParams.commitmentStart) + BigInt(votingParams.commitmentPeriod),
+      );
+      expect(actualVotingParams["1"].votingEndTime).to.equal(
+        BigInt(votingParams.commitmentStart) +
+          BigInt(votingParams.commitmentPeriod) +
+          BigInt(votingParams.votingPeriod),
+      );
+      expect(await voting.smtTreeMaxDepth()).to.equal(treeHeight);
       expect(await voting.owner()).to.equal(OWNER.address);
+
+      expect(await voting.voteVerifier()).to.equal(await votingVerifier.getAddress());
     });
   });
 
   describe("#registerForVoting", () => {
-    it("should register with correct ZKP proof", async () => {
-      const pair = generateSecrets();
+    let commitmentStartTimestamp: number;
 
-      const dataToVerify = await getPreImageZKP(pair);
+    beforeEach("setup", async () => {
+      commitmentStartTimestamp = (await time.latest()) + 60;
 
-      const commitment = getCommitment(pair);
-
-      await voting.registerForVoting(commitment, dataToVerify.formattedProof);
+      await voting.__Voting_init({
+        ...deepClone(defaultVotingParams),
+        commitmentStart: commitmentStartTimestamp,
+      });
     });
 
-    it("should not register with incorrect ZKP proof", async () => {
-      const pair = generateSecrets();
-
-      const dataToVerify = await getPreImageZKP(pair);
-
-      const incorrectCommitment = getCommitment(generateSecrets());
-
-      await expect(voting.registerForVoting(incorrectCommitment, dataToVerify.formattedProof)).to.be.revertedWith(
-        "Voting: Invalid vote proof",
-      );
+    it("should revert if trying to register not during the commitment period", async () => {
+      await expect(
+        voting.registerForVoting(
+          defaultProveIdentityParams,
+          defaultRegisterVerifierParams,
+          defaultTransitionStateParams,
+          false,
+        ),
+      ).to.be.rejectedWith("Voting: the voting must be in the commitment state to register");
     });
 
-    it("should not add same commitment twice", async () => {
-      const pair = generateSecrets();
+    it("should revert if commitment was already used", async () => {
+      await time.increase(commitmentStartTimestamp);
 
-      const dataToVerify = await getPreImageZKP(pair);
+      await voting.registerForVotingMock(defaultRegisterVerifierParams);
 
-      const commitment = getCommitment(pair);
-
-      await voting.registerForVoting(commitment, dataToVerify.formattedProof);
-
-      await expect(voting.registerForVoting(commitment, dataToVerify.formattedProof)).to.be.revertedWith(
-        "Voting: commitment already exists",
-      );
+      await expect(
+        voting.registerForVoting(
+          defaultProveIdentityParams,
+          defaultRegisterVerifierParams,
+          defaultTransitionStateParams,
+          false,
+        ),
+      ).to.be.rejectedWith("Voting: commitment already exists");
     });
   });
 
@@ -102,32 +170,49 @@ describe("Voting", () => {
     let zkpProof: { formattedProof: VerifierHelper.ProofPointsStruct; nullifierHash: string };
 
     beforeEach("register", async () => {
+      await voting.__Voting_init({
+        ...deepClone(defaultVotingParams),
+        commitmentStart: await time.latest(),
+      });
+
       pair = generateSecrets();
 
       pair.secret = ethers.ZeroHash;
       pair.nullifier = ethers.ZeroHash;
 
-      const dataToVerify = await getPreImageZKP(pair);
+      const commitment = getCommitment(pair);
 
-      await voting.registerForVoting(getCommitment(pair), dataToVerify.formattedProof);
+      const registerVerifierParams = {
+        ...deepClone(defaultRegisterVerifierParams),
+        commitment: commitment,
+      };
+
+      await voting.registerForVotingMock(registerVerifierParams);
 
       root = await voting.getRoot();
 
-      const [actualPathIndices, actualPathElements] = getLazyProof(
-        poseidonHash,
-        0,
-        [getBytes32PoseidonHash(getCommitment(pair))],
-        treeHeight,
-      );
+      const commitmentIndex = poseidonHash(commitment);
 
-      zkpProof = await getZKP(pair, 1n, root, actualPathIndices, actualPathElements);
+      const onchainProof = await voting.getProof(commitmentIndex);
+
+      zkpProof = await getZKP(pair, root, "1", await voting.getAddress(), onchainProof.siblings);
+
+      await time.increase((await time.latest()) + Number(defaultVotingParams.commitmentPeriod));
+    });
+
+    it("should revert if trying to vote not during the voting period", async () => {
+      await time.increase(Number(defaultVotingParams.votingPeriod));
+
+      await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
+        "Voting: the voting must be in the pending state to vote",
+      );
     });
 
     it("should vote with correct ZKP proof", async () => {
       await voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof);
     });
 
-    it("should not vote with incorrect ZKP proof", async () => {
+    it("should revert if vote with incorrect ZKP proof", async () => {
       zkpProof.formattedProof.a[0] = ethers.ZeroHash;
 
       await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
@@ -135,13 +220,13 @@ describe("Voting", () => {
       );
     });
 
-    it("should not vote with non-existing root", async () => {
+    it("should revert if vote with incorrect nullifier hash", async () => {
       await expect(
         voting.vote(ethers.ZeroHash, zkpProof.nullifierHash, 1n, zkpProof.formattedProof),
       ).to.be.revertedWith("Vote: root doesn't exist");
     });
 
-    it("should not vote twice", async () => {
+    it("should revert if vote with used nullifier hash", async () => {
       await voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof);
 
       await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
@@ -150,73 +235,43 @@ describe("Voting", () => {
     });
   });
 
+  describe("#getProposalStatus", () => {
+    it("should return correct proposal status", async () => {
+      expect(await voting.getProposalStatus()).to.equal(VotingStatus.NONE);
+
+      await voting.__Voting_init({
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+      });
+
+      expect(await voting.getProposalStatus()).to.equal(VotingStatus.NOT_STARTED);
+
+      await time.increase(Number(defaultVotingParams.commitmentPeriod));
+
+      expect(await voting.getProposalStatus()).to.equal(VotingStatus.COMMITMENT);
+
+      await time.increase(Number(defaultVotingParams.votingPeriod));
+
+      expect(await voting.getProposalStatus()).to.equal(VotingStatus.PENDING);
+
+      await time.increase(Number(defaultVotingParams.votingPeriod));
+
+      expect(await voting.getProposalStatus()).to.equal(VotingStatus.ENDED);
+    });
+  });
+
   describe("#addRoot", () => {
     it("should record a root in history only by the owner", async () => {
+      await voting.__Voting_init({
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+      });
+
       await expect(voting.connect(FIRST).addRoot(ethers.ZeroHash)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
       await expect(voting.addRoot(ethers.ZeroHash)).to.be.eventually.fulfilled;
-    });
-  });
-
-  describe("#getLazyProof", () => {
-    let localMerkleTree: MerkleTree;
-
-    let testTreeHeight = 6n;
-
-    it("should return a proof for a leaf", async () => {
-      const pair = generateSecrets();
-      const commitment = getCommitment(pair);
-
-      localMerkleTree = buildSparseMerkleTree(poseidonHash, [getBytes32PoseidonHash(commitment)], testTreeHeight);
-
-      const leaf = getBytes32PoseidonHash(commitment);
-
-      let [expectedPathIndices, expectedPathElements] = getPositionalProof(localMerkleTree, leaf);
-
-      expectedPathIndices = expectedPathIndices.map((x) => (x == 0 ? 1 : 0));
-
-      const [actualPathIndices, actualPathElements] = getLazyProof(
-        poseidonHash,
-        0,
-        [getBytes32PoseidonHash(commitment)],
-        testTreeHeight,
-      );
-
-      expect(expectedPathIndices).to.deep.equal(actualPathIndices);
-      expect(expectedPathElements).to.deep.equal(actualPathElements);
-    });
-
-    it("should return a proof for a leaf with a lot of leaves", async () => {
-      let pairs = [];
-      let commitments = [];
-
-      for (let i = 0; i < 4; i++) {
-        const pair = generateSecrets();
-        const commitment = getCommitment(pair);
-
-        pairs.push(pair);
-        commitments.push(commitment);
-      }
-
-      localMerkleTree = buildSparseMerkleTree(poseidonHash, commitments.map(getBytes32PoseidonHash), testTreeHeight);
-
-      const leaf = getBytes32PoseidonHash(getCommitment(pairs[3]));
-
-      let [expectedPathIndices, expectedPathElements] = getPositionalProof(localMerkleTree, leaf);
-
-      expectedPathIndices = expectedPathIndices.map((x) => (x == 0 ? 1 : 0));
-
-      const [actualPathIndices, actualPathElements] = getLazyProof(
-        poseidonHash,
-        3,
-        commitments.map(getBytes32PoseidonHash),
-        testTreeHeight,
-      );
-
-      expect(expectedPathIndices).to.deep.equal(actualPathIndices);
-      expect(expectedPathElements).to.deep.equal(actualPathElements);
     });
   });
 });

@@ -15,7 +15,7 @@ contract PoseidonSMT {
         bytes32Tree.setHashers(_hash2, _hash3);
     }
 
-    function getProof(bytes32 key_) internal view returns (SparseMerkleTree.Proof memory) {
+    function getProof(bytes32 key_) external view returns (SparseMerkleTree.Proof memory) {
         return bytes32Tree.getProof(key_);
     }
 

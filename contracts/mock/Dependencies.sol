@@ -7,3 +7,4 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {VerifierSig} from "@iden3/contracts/lib/verifierSig.sol";
 import {VerifierMTP} from "@iden3/contracts/lib/verifierMTP.sol";
 import {VerifierV2} from "@iden3/contracts/lib/verifierV2.sol";
+import {StateV2} from "@iden3/contracts/state/StateV2.sol";

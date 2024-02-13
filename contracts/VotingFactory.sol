@@ -17,6 +17,11 @@ import {VotingRegistry} from "./VotingRegistry.sol";
 contract VotingFactory is IVotingFactory, Initializable {
     VotingRegistry public votingRegistry;
 
+    modifier onlyExistingVotingType(string memory votingType_) {
+        _requireExistingVotingType(votingType_);
+        _;
+    }
+
     /**
      * @notice The function to initialize the VotingFactory.
      * @param votingRegistry_ The address of the VotingRegistry contract.
@@ -33,7 +38,7 @@ contract VotingFactory is IVotingFactory, Initializable {
     function createVoting(
         string memory votingType_,
         IVoting.VotingParams calldata votingParams_
-    ) external {
+    ) external onlyExistingVotingType(votingType_) {
         address voting_ = _deploy(
             votingType_,
             abi.encodeWithSelector(IVoting.__Voting_init.selector, votingParams_)
@@ -51,7 +56,7 @@ contract VotingFactory is IVotingFactory, Initializable {
         string memory votingType_,
         IVoting.VotingParams calldata votingParams_,
         bytes32 salt_
-    ) external {
+    ) external onlyExistingVotingType(votingType_) {
         address voting_ = _deploy2(
             votingType_,
             abi.encodeWithSelector(IVoting.__Voting_init.selector, votingParams_),
@@ -114,5 +119,12 @@ contract VotingFactory is IVotingFactory, Initializable {
         );
 
         return Create2.computeAddress(salt_, bytecodeHash);
+    }
+
+    function _requireExistingVotingType(string memory votingType_) private view {
+        require(
+            votingRegistry.getVotingImplementation(votingType_) != address(0),
+            "VotingFactory: voting type does not exist"
+        );
     }
 }

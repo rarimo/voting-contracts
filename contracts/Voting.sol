@@ -148,9 +148,10 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
 
         require(
             voteVerifier.verifyProofSafe(
-                [uint256(root_), uint256(nullifierHash_), voteId_].asDynamic(),
+                [uint256(root_), uint256(nullifierHash_), voteId_, uint256(uint160(address(this)))]
+                    .asDynamic(),
                 proof_,
-                3
+                4
             ),
             "Voting: Invalid vote proof"
         );

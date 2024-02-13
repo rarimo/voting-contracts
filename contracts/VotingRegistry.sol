@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -41,7 +42,7 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
      *
      * It binds the VotingFactory contract to the VotingRegistry.
      */
-    function __VotingRegistry_init(address votingFactory_) internal initializer {
+    function __VotingRegistry_init(address votingFactory_) external initializer {
         __Ownable_init();
 
         votingFactory = votingFactory_;
@@ -55,6 +56,11 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
         address[] memory newImplementations_
     ) external onlyOwner onlyEqualLength(names_, newImplementations_) {
         for (uint256 i = 0; i < names_.length; i++) {
+            require(
+                Address.isContract(newImplementations_[i]),
+                "VotingRegistry: the implementation address is not a contract"
+            );
+
             _votingImplementations[names_[i]] = newImplementations_[i];
         }
     }

@@ -64,13 +64,11 @@ const config: HardhatUserConfig = {
     strict: false,
   },
   gasReporter: {
-    enabled: false,
+    enabled: true,
   },
   typechain: {
     outDir: "generated-types",
     target: "ethers-v6",
-    alwaysGenerateOverloads: true,
-    discriminateTypes: true,
   },
 };
 

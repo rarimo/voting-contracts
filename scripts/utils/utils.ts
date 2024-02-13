@@ -11,3 +11,7 @@ export function wei(value: string | number | bigint, decimal: number = 18): bigi
 export function fromWei(value: string | number | bigint, decimal: number = 18): string {
   return (BigInt(value) / 10n ** BigInt(decimal)).toString();
 }
+
+export function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
