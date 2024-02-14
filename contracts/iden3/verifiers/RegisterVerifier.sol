@@ -47,8 +47,8 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         return _registrationsProofInfo[identityId_];
     }
 
-    function isIdentityRegistered(uint256 identityId_) public view returns (bool) {
-        return _registrationsProofInfo[identityId_].registerProofParams.commitment != 0;
+    function isIdentityRegistered(uint256 documentNullifier_) public view returns (bool) {
+        return _registrationsProofInfo[documentNullifier_].registerProofParams.commitment != 0;
     }
 
     function _proveRegistration(
@@ -61,16 +61,16 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             zkpQueriesStorage.getQueryValidator(REGISTER_PROOF_QUERY_ID)
         );
 
-        uint256 identityId_ = proveIdentityParams_.inputs[queryValidator_.getUserIdIndex()];
+        uint256 documentNullifier_ = registerProofInfo_.registerProofParams.documentNullifier;
 
         require(
-            !isIdentityRegistered(identityId_),
+            !isIdentityRegistered(documentNullifier_),
             "RegisterVerifier: Identity is already registered."
         );
 
-        _registrationsProofInfo[identityId_] = registerProofInfo_;
+        _registrationsProofInfo[documentNullifier_] = registerProofInfo_;
 
-        emit RegisterAccepted(identityId_, registerProofInfo_);
+        emit RegisterAccepted(documentNullifier_, registerProofInfo_);
     }
 
     function _verify(
