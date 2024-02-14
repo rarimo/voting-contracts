@@ -8,7 +8,7 @@ import { getPoseidon, Reverter } from "@test-helpers";
 
 import { IVoting, VotingFactory, VotingRegistry, Voting, Voting__factory } from "@ethers-v6";
 
-describe("VotingRegistry", () => {
+describe("VotingFactory", () => {
   const reverter = new Reverter();
 
   const VOTING_TYPE = "Voting Type 1";
@@ -72,16 +72,17 @@ describe("VotingRegistry", () => {
         commitmentStart: (await time.latest()) + 60,
         commitmentPeriod: 60,
         votingPeriod: 60,
+        candidates: [ethers.toBeHex(OWNER.address, 32)],
       };
     });
 
     it("should revert if trying to create a voting with non-existing type", async () => {
       await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256))"]("Non-existing type", votingParams),
+        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]))"]("Non-existing", votingParams),
       ).to.be.revertedWith("VotingFactory: voting type does not exist");
 
       await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256),bytes32)"](
+        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]),bytes32)"](
           "Non-existing type",
           votingParams,
           ethers.ZeroHash,
@@ -91,10 +92,13 @@ describe("VotingRegistry", () => {
 
     it("should create a voting with correct parameters", async () => {
       await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256))"](VOTING_TYPE, votingParams),
+        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]))"](VOTING_TYPE, votingParams),
       ).to.emit(votingFactory, "VotingCreated");
 
-      const voting = Voting__factory.connect((await votingRegistry.listPools(VOTING_TYPE, 0, 1))[0], OWNER);
+      const voting = Voting__factory.connect(
+        (await votingRegistry["listPools(string,uint256,uint256)"](VOTING_TYPE, 0, 1))[0],
+        OWNER,
+      );
 
       const votingInfo = await voting.votingInfo();
 
@@ -109,7 +113,11 @@ describe("VotingRegistry", () => {
       const predictedAddress = await votingFactory.predictVotingAddress(VOTING_TYPE, votingParams, salt);
 
       await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256),bytes32)"](VOTING_TYPE, votingParams, salt),
+        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]),bytes32)"](
+          VOTING_TYPE,
+          votingParams,
+          salt,
+        ),
       )
         .to.emit(votingFactory, "VotingCreated")
         .withArgs(VOTING_TYPE, OWNER.address, predictedAddress);

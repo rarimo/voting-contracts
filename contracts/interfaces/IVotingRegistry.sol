@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+/**
+ * @title IVotingRegistry Interface
+ * @dev Interface for the VotingRegistry, responsible for managing voting pool implementations and instances.
+ */
 interface IVotingRegistry {
     /**
-     * @notice The function that sets voting pools' implementations.
-     * This function is also used to upgrade voting pools' implementations.
+     * @notice Sets or upgrades the implementations for specified voting pool types.
      *
-     * Requirements:
-     * - The caller must be the owner of the contract.
-     * - The length of the names and newImplementations must be equal.
+     * @dev Only callable by the owner. Ensures names and implementations arrays are of equal length.
      *
-     * @param names_ the names that are associated with the voting pools' implementations
-     * @param newImplementations_ the new implementations of the voting pools
+     * @param names_ Array of names associated with voting pool types.
+     * @param newImplementations_ Array of addresses for the new implementations of the corresponding voting pool types.
      */
     function setNewImplementations(
         string[] memory names_,
@@ -19,48 +20,77 @@ interface IVotingRegistry {
     ) external;
 
     /**
-     * @notice The function to add new voting pools into the registry
-     * @param name_ the voting pool's associated name
-     * @param voting_ the proxy address of the voting pool
+     * @notice Adds a new proxy pool to the registry.
      *
-     * Requirements:
-     * - The caller must be the VotingFactory contract.
+     * @dev Only callable by the VotingFactory contract.
      *
-     * It is used only by the VotingFactory to add new voting pools into the registry.
+     * @param name_ The name associated with the voting pool type.
+     * @param proposer_ The address of the proposer creating the voting instance.
+     * @param voting_ The proxy address of the new voting pool instance.
      */
-    function addProxyPool(string memory name_, address voting_) external;
+    function addProxyPool(string memory name_, address proposer_, address voting_) external;
 
     /**
-     * @notice The function to get implementation of the specific voting type
-     * @param name_ the name of the voting type
-     * @return address_ the implementation that will be used to deploy future voting contracts
+     * @notice Retrieves the implementation address for a specific voting type.
+     * @param name_ The name of the voting type.
+     * @return address The address of the implementation used for deploying future voting contracts of this type.
      */
     function getVotingImplementation(string memory name_) external view returns (address);
 
     /**
-     * @notice The function to check if the address is exists in the provided voting pool.
-     * @param name_ the associated voting pool
-     * @param voting_ the address to check
-     * @return true if voting_ is within the voting pool, false otherwise
+     * @notice Checks if a voting instance exists within a specific voting pool type.
+     * @param name_ The name associated with the voting pool type.
+     * @param voting_ The address of the voting instance to check.
+     * @return bool True if the voting instance exists within the specified voting pool type, false otherwise.
      */
     function isVotingExist(string memory name_, address voting_) external view returns (bool);
 
     /**
-     * @notice The function to count voting instances within the provided voting pool.
-     * @param votingType_ the associated voting pool name
-     * @return the number of voting pools with this name
+     * @notice Checks if a voting instance exists within the pools created by a specific proposer.
+     * @param proposer_ The address of the proposer to check against.
+     * @param voting_ The address of the voting instance to check.
+     * @return bool True if the voting instance exists within the pools created by the specified proposer, false otherwise.
+     */
+    function isVotingExist(address proposer_, address voting_) external view returns (bool);
+
+    /**
+     * @notice Counts the number of voting instances within a specific voting pool type.
+     * @param votingType_ The name associated with the voting pool type.
+     * @return uint256 The number of voting instances within the specified voting pool type.
      */
     function votingCountWithinPool(string memory votingType_) external view returns (uint256);
 
     /**
-     * @notice The paginated function to list pools by their name (call `countPools()` to account for pagination)
-     * @param name_ the associated pools name
-     * @param offset_ the starting index in the pools array
-     * @param limit_ the number of pools
-     * @return pools_ the array of pools proxies
+     * @notice Counts the number of voting instances created by a specific proposer.
+     * @param proposer_ The address of the proposer.
+     * @return uint256 The number of voting instances created by the specified proposer.
+     */
+    function votingCountWithinPool(address proposer_) external view returns (uint256);
+
+    /**
+     * @notice Lists voting pools by their type in a paginated manner.
+     * @dev Utilize `votingCountWithinPool` with the same `name_` parameter for pagination management.
+     * @param name_ The name associated with the voting pool type.
+     * @param offset_ The starting index for pagination.
+     * @param limit_ The maximum number of pool addresses to return.
+     * @return pools_ Array of proxy addresses for the voting pools of the specified type.
      */
     function listPools(
         string memory name_,
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (address[] memory pools_);
+
+    /**
+     * @notice Lists voting pools created by a specific proposer in a paginated manner.
+     * @dev Utilize `votingCountWithinPool` with the same `proposer_` parameter for pagination management.
+     * @param proposer_ The address of the proposer.
+     * @param offset_ The starting index for pagination.
+     * @param limit_ The maximum number of pool addresses to return.
+     * @return pools_ Array of proxy addresses for the voting pools created by the specified proposer.
+     */
+    function listPools(
+        address proposer_,
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_);

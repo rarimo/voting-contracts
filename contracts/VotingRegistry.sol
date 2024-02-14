@@ -12,7 +12,7 @@ import {Paginator} from "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import {IVotingRegistry} from "./interfaces/IVotingRegistry.sol";
 
 /**
- * @title VotingRegistry
+ * @title VotingRegistry contract
  */
 contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -21,7 +21,10 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
     address public votingFactory;
 
     // votingType => votingPool
-    mapping(string => EnumerableSet.AddressSet) private _votingPools;
+    mapping(string => EnumerableSet.AddressSet) private _votingPoolsByType;
+
+    // proposer => votingPool
+    mapping(address => EnumerableSet.AddressSet) private _votingPoolsByAddress;
 
     // votingType => votingImplementation
     mapping(string => address) private _votingImplementations;
@@ -68,8 +71,13 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
     /**
      * @inheritdoc IVotingRegistry
      */
-    function addProxyPool(string memory name_, address voting_) external onlyFactory {
-        _votingPools[name_].add(voting_);
+    function addProxyPool(
+        string memory name_,
+        address proposer_,
+        address voting_
+    ) external onlyFactory {
+        _votingPoolsByType[name_].add(voting_);
+        _votingPoolsByAddress[proposer_].add(voting_);
     }
 
     /**
@@ -83,14 +91,28 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
      * @inheritdoc IVotingRegistry
      */
     function isVotingExist(string memory name_, address voting_) external view returns (bool) {
-        return _votingPools[name_].contains(voting_);
+        return _votingPoolsByType[name_].contains(voting_);
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
+     */
+    function isVotingExist(address proposer_, address voting_) external view returns (bool) {
+        return _votingPoolsByAddress[proposer_].contains(voting_);
     }
 
     /**
      * @inheritdoc IVotingRegistry
      */
     function votingCountWithinPool(string memory votingType_) external view returns (uint256) {
-        return _votingPools[votingType_].length();
+        return _votingPoolsByType[votingType_].length();
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
+     */
+    function votingCountWithinPool(address proposer_) external view returns (uint256) {
+        return _votingPoolsByAddress[proposer_].length();
     }
 
     /**
@@ -101,7 +123,18 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable {
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_) {
-        return _votingPools[name_].part(offset_, limit_);
+        return _votingPoolsByType[name_].part(offset_, limit_);
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
+     */
+    function listPools(
+        address proposer_,
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (address[] memory pools_) {
+        return _votingPoolsByAddress[proposer_].part(offset_, limit_);
     }
 
     function _requireEqualLength(

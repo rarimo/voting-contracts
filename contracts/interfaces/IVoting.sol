@@ -7,36 +7,42 @@ import {IBaseVerifier} from "./verifiers/IBaseVerifier.sol";
 import {IRegisterVerifier} from "./verifiers/IRegisterVerifier.sol";
 
 /**
- * @title IVoting
+ * @title IVoting Interface
+ * @dev Interface for the voting process, detailing the setup, registration for voting, casting votes, and querying voting status.
  */
 interface IVoting {
+    /**
+     * @notice Enumeration for voting status
+     */
     enum VotingStatus {
-        NONE,
-        NOT_STARTED,
-        COMMITMENT,
-        PENDING,
-        ENDED
+        NONE, // No voting created
+        NOT_STARTED, // Voting created but not started
+        COMMITMENT, // Commitment phase for registration
+        PENDING, // Active voting phase
+        ENDED // Voting has concluded
     }
 
     /**
-     * @notice Stores the configuration parameters for a DAO voting situation.
-     * @param remark A brief description or title of the voting.
-     * @param commitmentStart The start time of the commitment phase.
-     * @param commitmentStart The start time of the commitment period.
-     * @param votingPeriod Duration of the voting period.
+     * @notice Struct for voting parameters configuration
+     * @param remark Description or title of the voting event or voting metadata
+     * @param commitmentStart Timestamp for the start of the registration phase
+     * @param commitmentPeriod Duration in seconds of the registration phase
+     * @param votingPeriod Duration in seconds of the voting phase
+     * @param candidates List of candidate identifiers
      */
     struct VotingParams {
         string remark;
         uint256 commitmentStart;
         uint256 commitmentPeriod;
         uint256 votingPeriod;
+        bytes32[] candidates;
     }
 
     /**
-     * @notice Stores parameters for a voting instance.
-     * @param commitmentStartTime Timestamp for the start of the commitment period.
-     * @param votingStartTime Timestamp for the start of the voting period.
-     * @param votingEndTime Timestamp for the end of the voting period.
+     * @notice Struct for tracking voting phase timings
+     * @param commitmentStartTime Start timestamp of the registration phase
+     * @param votingStartTime Start timestamp of the voting phase
+     * @param votingEndTime End timestamp of the voting phase
      */
     struct VotingValues {
         uint256 commitmentStartTime;
@@ -45,18 +51,18 @@ interface IVoting {
     }
 
     /**
-     * @notice Represents the counters for voting activities on a voting.
-     * @param votesCount The total number of votes.
+     * @notice Struct for counting votes
+     * @param votesCount Total number of votes cast
      */
     struct VotingCounters {
         uint256 votesCount;
     }
 
     /**
-     * @notice Represents a voting structure.
-     * @param remark A brief description or title of the voting.
-     * @param params The voting parameters.
-     * @param counters The voting counters.
+     * @notice Struct for detailed information about a voting
+     * @param remark Title or description of the voting
+     * @param values Timing information for the voting phases
+     * @param counters Count of votes
      */
     struct VotingInfo {
         string remark;
@@ -64,35 +70,56 @@ interface IVoting {
         VotingCounters counters;
     }
 
-    event VotingInitialized(address proposer, VotingParams votingParams);
+    /**
+     * @notice Emitted when a new voting is initialized
+     * @param proposer Address of the proposer initializing the voting. Usually the factory contract
+     * @param votingParams Struct containing the parameters of the voting
+     */
+    event VotingInitialized(address indexed proposer, VotingParams votingParams);
+
+    /**
+     * @notice Emitted when a user successfully registers for voting
+     * @param user Address of the user registering
+     * @param proveIdentityParams Parameters used for proving the user's identity
+     * @param registerProofParams Parameters used for the registration proof
+     * @param blockNumber Block number at which the registration occurred
+     */
     event UserRegistered(
-        address user,
+        address indexed user,
         IBaseVerifier.ProveIdentityParams proveIdentityParams,
         IRegisterVerifier.RegisterProofParams registerProofParams,
         uint256 blockNumber
     );
+
+    /**
+     * @notice Emitted when a user casts a vote
+     * @param user Address of the user voting
+     * @param root Root of the SMT tree that was used at the time of voting
+     * @param nullifierHash Hash of the nullifier to prevent double voting
+     * @param candidate Identifier of the candidate voted for
+     * @param blockNumber Block number at which the vote was cast
+     */
     event UserVoted(
-        address user,
+        address indexed user,
         bytes32 root,
         bytes32 nullifierHash,
-        uint256 voteId,
+        bytes32 candidate,
         uint256 blockNumber
     );
 
     /**
-     * @notice The function to start the voting process.
-     * Is used by the factory contract to create votings.
-     *
-     * @param votingParams_ The voting parameters.
+     * @notice Initializes a new voting session with specified parameters
+     * @param votingParams_ The parameters for the voting session, including start times, periods, and candidates.
      */
     function __Voting_init(VotingParams calldata votingParams_) external;
 
     /**
-     * @notice The function to register for voting.
-     * @param proveIdentityParams_ The parameters to prove the identity.
-     * @param registerProofParams_ The parameters to prove the registration.
-     * @param transitStateParams_ The parameters to transit the state.
-     * @param isTransitState_ The flag to transit the state.
+     * @notice Registers a user for voting, verifying their identity and registration proof
+     * @dev Requires the voting to be in the commitment phase. Emits a UserRegistered event upon success.
+     * @param proveIdentityParams_ Parameters to prove the user's identity.
+     * @param registerProofParams_ Parameters for the user's registration proof.
+     * @param transitStateParams_ Parameters for state transition, if applicable.
+     * @param isTransitState_ Flag indicating whether a state transition is required.
      */
     function registerForVoting(
         IBaseVerifier.ProveIdentityParams memory proveIdentityParams_,
@@ -102,21 +129,22 @@ interface IVoting {
     ) external;
 
     /**
-     * @notice The function to vote.
-     * @param root_ The root of the SMT tree.
-     * @param nullifierHash_ The nullifier hash.
-     * @param voteId_ The vote identifier.
-     * @param proof_ The proof points.
+     * @notice Allows a registered user to cast a vote for a candidate
+     * @dev Verifies the user's voting proof and updates the voting tally. Emits a UserVoted event upon success.
+     * @param root_ The root of the SMT tree to verify the vote against.
+     * @param nullifierHash_ The hash of the nullifier to prevent double voting.
+     * @param candidate_ The identifier of the candidate being voted for.
+     * @param proof_ The zk-SNARK proof points for the vote.
      */
     function vote(
         bytes32 root_,
         bytes32 nullifierHash_,
-        uint256 voteId_,
+        bytes32 candidate_,
         VerifierHelper.ProofPoints memory proof_
     ) external;
 
     /**
-     * @notice The function to get the proposal status.
+     * @notice Retrieves the current status of the proposal
      */
     function getProposalStatus() external view returns (VotingStatus);
 }

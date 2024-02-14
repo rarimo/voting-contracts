@@ -12,7 +12,7 @@ import {IVotingFactory} from "./interfaces/IVotingFactory.sol";
 import {VotingRegistry} from "./VotingRegistry.sol";
 
 /**
- * @title VotingFactory
+ * @title VotingFactory contract
  */
 contract VotingFactory is IVotingFactory, Initializable {
     VotingRegistry public votingRegistry;
@@ -44,7 +44,7 @@ contract VotingFactory is IVotingFactory, Initializable {
             abi.encodeWithSelector(IVoting.__Voting_init.selector, votingParams_)
         );
 
-        _register(votingType_, voting_);
+        _register(votingType_, msg.sender, voting_);
 
         emit VotingCreated(votingType_, msg.sender, voting_);
     }
@@ -63,7 +63,7 @@ contract VotingFactory is IVotingFactory, Initializable {
             salt_
         );
 
-        _register(votingType_, voting_);
+        _register(votingType_, msg.sender, voting_);
 
         emit VotingCreated(votingType_, msg.sender, voting_);
     }
@@ -102,8 +102,8 @@ contract VotingFactory is IVotingFactory, Initializable {
             );
     }
 
-    function _register(string memory poolType_, address poolProxy_) private {
-        votingRegistry.addProxyPool(poolType_, poolProxy_);
+    function _register(string memory poolType_, address proposer_, address poolProxy_) private {
+        votingRegistry.addProxyPool(poolType_, proposer_, poolProxy_);
     }
 
     function _predictPoolAddress(

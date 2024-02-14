@@ -8,62 +8,51 @@ import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
 import {IVoting} from "./interfaces/IVoting.sol";
-import {IVerifier} from "./interfaces/IVerifier.sol";
 import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
 import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
 
 import {PoseidonSMT} from "./utils/PoseidonSMT.sol";
 
 /**
- * @title Voting
+ * @title Voting Contract
+ * @dev Implements a voting system with registration and voting phases, utilizing zk-SNARKs for privacy and integrity, and a Merkle tree for vote tracking.
  */
 contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
     using TypeCaster for *; // TypeCaster library for type conversions.
     using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
 
-    /**
-     * @notice The verifier contract for the registration proof (zk-SNARK)
-     */
+    /// The contract for registration proof verification
     IRegisterVerifier public immutable registerVerifier;
 
-    /**
-     * @notice The verifier contract for the voting proof (zk-SNARK)
-     */
+    /// The contract for voting proof verification
     address public immutable voteVerifier;
 
-    /**
-     * @notice The maximum depth of the SMT tree
-     */
+    /// The maximum depth of the Sparse Merkle Tree (SMT)
     uint256 public immutable smtTreeMaxDepth;
 
-    /**
-     * @notice The voting information
-     */
+    /// Struct containing all relevant voting information
     VotingInfo public votingInfo;
 
-    /**
-     * @notice The commitments to ensure that no registration with the same identifier occurs
-     */
+    /// Mapping to track commitments and prevent duplicate registrations
     mapping(bytes32 => bool) public commitments;
 
-    /**
-     * @notice The nullifiers to prevent double voting
-     */
-    mapping(bytes32 => bool) public nullifies;
+    /// Mapping to track nullifiers and prevent double voting
+    mapping(bytes32 => bool) public nullifiers;
 
-    /**
-     * @notice The roots history to ensure that the root exists
-     */
+    /// Mapping to track roots and validate their existence
     mapping(bytes32 => bool) public rootsHistory;
 
-    /**
-     * @notice The votes per candidate
-     */
-    mapping(uint256 => uint256) public votesPerCandidate;
+    /// Mapping of candidates available for voting
+    mapping(bytes32 => bool) public candidates;
+
+    /// Mapping to track votes per candidate
+    mapping(bytes32 => uint256) public votesPerCandidate;
 
     /**
-     * @notice The constructor of the Voting contract implementation.
-     * All of the parameters are immutable therefore will be included to the bytecode.
+     * @notice Initializes a new Voting contract with specified verifiers and SMT tree depth.
+     * @param voteVerifier_ Address of the voting proof verifier contract.
+     * @param registerVerifier_ Address of the registration proof verifier contract.
+     * @param treeHeight_ Maximum depth of the SMT used for vote tracking.
      */
     constructor(address voteVerifier_, address registerVerifier_, uint256 treeHeight_) {
         voteVerifier = voteVerifier_;
@@ -79,6 +68,8 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         __Ownable_init();
         __PoseidonSMT_init(smtTreeMaxDepth);
 
+        _validateVotingParams(votingParams_);
+
         votingInfo.remark = votingParams_.remark;
         votingInfo.values.commitmentStartTime = votingParams_.commitmentStart;
         votingInfo.values.votingStartTime =
@@ -87,6 +78,10 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         votingInfo.values.votingEndTime =
             votingInfo.values.votingStartTime +
             votingParams_.votingPeriod;
+
+        for (uint256 i = 0; i < votingParams_.candidates.length; i++) {
+            candidates[votingParams_.candidates[i]] = true;
+        }
 
         emit VotingInitialized(msg.sender, votingParams_);
     }
@@ -138,7 +133,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
     function vote(
         bytes32 root_,
         bytes32 nullifierHash_,
-        uint256 vote_,
+        bytes32 candidate_,
         VerifierHelper.ProofPoints memory proof_
     ) external {
         require(
@@ -146,24 +141,30 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
             "Voting: the voting must be in the pending state to vote"
         );
 
-        require(!nullifies[nullifierHash_], "Voting: nullifier already used");
-        require(rootsHistory[root_], "Vote: root doesn't exist");
+        require(!nullifiers[nullifierHash_], "Voting: nullifier already used");
+        require(rootsHistory[root_], "Voting: root doesn't exist");
+        require(candidates[candidate_], "Voting: candidate doesn't exist");
 
         require(
             voteVerifier.verifyProofSafe(
-                [uint256(root_), uint256(nullifierHash_), vote_, uint256(uint160(address(this)))]
-                    .asDynamic(),
+                [
+                    uint256(root_),
+                    uint256(nullifierHash_),
+                    uint256(candidate_),
+                    uint256(uint160(address(this)))
+                ].asDynamic(),
                 proof_,
                 4
             ),
             "Voting: Invalid vote proof"
         );
 
-        nullifies[nullifierHash_] = true;
+        nullifiers[nullifierHash_] = true;
 
-        votesPerCandidate[vote_]++;
+        votesPerCandidate[candidate_]++;
+        votingInfo.counters.votesCount++;
 
-        emit UserVoted(msg.sender, root_, nullifierHash_, vote_, block.number);
+        emit UserVoted(msg.sender, root_, nullifierHash_, candidate_, block.number);
     }
 
     /**
@@ -195,5 +196,18 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
      */
     function addRoot(bytes32 root_) external onlyOwner {
         rootsHistory[root_] = true;
+    }
+
+    function _validateVotingParams(VotingParams calldata votingParams_) internal view {
+        require(
+            votingParams_.commitmentStart > block.timestamp,
+            "Voting: commitment start must be in the future"
+        );
+        require(
+            votingParams_.commitmentPeriod > 0,
+            "Voting: commitment period must be greater than 0"
+        );
+        require(votingParams_.votingPeriod > 0, "Voting: voting period must be greater than 0");
+        require(votingParams_.candidates.length > 0, "Voting: candidates must be provided");
     }
 }

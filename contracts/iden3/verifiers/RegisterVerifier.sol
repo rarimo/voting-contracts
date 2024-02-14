@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import {Vector} from "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
+import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
 import {ICircuitValidator} from "@iden3/contracts/interfaces/ICircuitValidator.sol";
 
 import {IRegisterVerifier} from "../../interfaces/verifiers/IRegisterVerifier.sol";
@@ -12,19 +13,24 @@ import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
 
 import {BaseVerifier} from "./BaseVerifier.sol";
 
-import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
-
+/**
+ * @title RegisterVerifier contract
+ */
 contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     using Vector for Vector.UintVector;
 
     string public constant REGISTER_PROOF_QUERY_ID = "REGISTER_PROOF";
 
-    mapping(uint256 => RegisterProofInfo) internal _registrationsProofInfo;
+    // documentNullifier => RegisterProofInfo
+    mapping(uint256 => RegisterProofInfo) internal _registrationProofInfo;
 
     function __RegisterVerifier_init(IZKPQueriesStorage zkpQueriesStorage_) external initializer {
         __BaseVerifier_init(zkpQueriesStorage_);
     }
 
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
     function proveRegistration(
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_
@@ -32,6 +38,9 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
 
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
     function transitStateAndProveRegistration(
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_,
@@ -41,14 +50,20 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
 
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
     function getRegisterProofInfo(
         uint256 identityId_
     ) external view returns (RegisterProofInfo memory) {
-        return _registrationsProofInfo[identityId_];
+        return _registrationProofInfo[identityId_];
     }
 
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
     function isIdentityRegistered(uint256 documentNullifier_) public view returns (bool) {
-        return _registrationsProofInfo[documentNullifier_].registerProofParams.commitment != 0;
+        return _registrationProofInfo[documentNullifier_].registerProofParams.commitment != 0;
     }
 
     function _proveRegistration(
@@ -57,10 +72,6 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     ) internal {
         _verify(REGISTER_PROOF_QUERY_ID, proveIdentityParams_, registerProofInfo_);
 
-        IQueryValidator queryValidator_ = IQueryValidator(
-            zkpQueriesStorage.getQueryValidator(REGISTER_PROOF_QUERY_ID)
-        );
-
         uint256 documentNullifier_ = registerProofInfo_.registerProofParams.documentNullifier;
 
         require(
@@ -68,7 +79,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             "RegisterVerifier: Identity is already registered."
         );
 
-        _registrationsProofInfo[documentNullifier_] = registerProofInfo_;
+        _registrationProofInfo[documentNullifier_] = registerProofInfo_;
 
         emit RegisterAccepted(documentNullifier_, registerProofInfo_);
     }

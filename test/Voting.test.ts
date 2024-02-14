@@ -28,6 +28,7 @@ describe("Voting", () => {
     commitmentStart: 0,
     commitmentPeriod: 60,
     votingPeriod: 60,
+    candidates: [],
   };
 
   let defaultProveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
@@ -64,6 +65,8 @@ describe("Voting", () => {
 
   before("setup", async () => {
     [OWNER, FIRST] = await ethers.getSigners();
+
+    defaultVotingParams.candidates = [ethers.toBeHex(OWNER.address, 32)];
 
     const VotingVerifier = await ethers.getContractFactory("VoteVerifier");
     votingVerifier = await VotingVerifier.deploy();
@@ -122,6 +125,51 @@ describe("Voting", () => {
 
       expect(await voting.voteVerifier()).to.equal(await votingVerifier.getAddress());
     });
+
+    it("should revert if commitment start is in the past", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: 0,
+      };
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
+        "Voting: commitment start must be in the future",
+      );
+    });
+
+    it("should revert if commitment period is 0", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+        commitmentPeriod: 0,
+      };
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
+        "Voting: commitment period must be greater than 0",
+      );
+    });
+
+    it("should revert if voting period is 0", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+        votingPeriod: 0,
+      };
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
+        "Voting: voting period must be greater than 0",
+      );
+    });
+
+    it("should revert if candidates are not provided", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+        candidates: [],
+      };
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith("Voting: candidates must be provided");
+    });
   });
 
   describe("#registerForVoting", () => {
@@ -172,7 +220,7 @@ describe("Voting", () => {
     beforeEach("register", async () => {
       await voting.__Voting_init({
         ...deepClone(defaultVotingParams),
-        commitmentStart: await time.latest(),
+        commitmentStart: (await time.latest()) + 20,
       });
 
       pair = generateSecrets();
@@ -184,6 +232,8 @@ describe("Voting", () => {
         commitment: commitment,
       };
 
+      await time.increaseTo((await voting.votingInfo())["1"].commitmentStartTime);
+
       await voting.registerForVotingMock(registerVerifierParams);
 
       root = await voting.getRoot();
@@ -192,7 +242,13 @@ describe("Voting", () => {
 
       const onchainProof = await voting.getProof(commitmentIndex);
 
-      zkpProof = await getZKP(pair, root, "1", await voting.getAddress(), onchainProof.siblings);
+      zkpProof = await getZKP(
+        pair,
+        root,
+        ethers.toBeHex(OWNER.address, 32),
+        await voting.getAddress(),
+        onchainProof.siblings,
+      );
 
       await time.increase((await time.latest()) + Number(defaultVotingParams.commitmentPeriod));
     });
@@ -200,35 +256,46 @@ describe("Voting", () => {
     it("should revert if trying to vote not during the voting period", async () => {
       await time.increase(Number(defaultVotingParams.votingPeriod));
 
-      await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
-        "Voting: the voting must be in the pending state to vote",
-      );
+      await expect(
+        voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof),
+      ).to.be.revertedWith("Voting: the voting must be in the pending state to vote");
     });
 
     it("should vote with correct ZKP proof", async () => {
-      await voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof);
+      await voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof);
+    });
+
+    it("should revert if trying to vote for non-canidate", async () => {
+      await expect(
+        voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(FIRST.address, 32), zkpProof.formattedProof),
+      ).to.be.revertedWith("Voting: candidate doesn't exist");
     });
 
     it("should revert if vote with incorrect ZKP proof", async () => {
       zkpProof.formattedProof.a[0] = ethers.ZeroHash;
 
-      await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
-        "Voting: Invalid vote proof",
-      );
+      await expect(
+        voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof),
+      ).to.be.revertedWith("Voting: Invalid vote proof");
     });
 
     it("should revert if vote with incorrect nullifier hash", async () => {
       await expect(
-        voting.vote(ethers.ZeroHash, zkpProof.nullifierHash, 1n, zkpProof.formattedProof),
-      ).to.be.revertedWith("Vote: root doesn't exist");
+        voting.vote(
+          ethers.ZeroHash,
+          zkpProof.nullifierHash,
+          ethers.toBeHex(OWNER.address, 32),
+          zkpProof.formattedProof,
+        ),
+      ).to.be.revertedWith("Voting: root doesn't exist");
     });
 
     it("should revert if vote with used nullifier hash", async () => {
-      await voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof);
+      await voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof);
 
-      await expect(voting.vote(root, zkpProof.nullifierHash, 1n, zkpProof.formattedProof)).to.be.revertedWith(
-        "Voting: nullifier already used",
-      );
+      await expect(
+        voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof),
+      ).to.be.revertedWith("Voting: nullifier already used");
     });
   });
 
