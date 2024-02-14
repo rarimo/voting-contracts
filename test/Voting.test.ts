@@ -177,9 +177,6 @@ describe("Voting", () => {
 
       pair = generateSecrets();
 
-      pair.secret = ethers.ZeroHash;
-      pair.nullifier = ethers.ZeroHash;
-
       const commitment = getCommitment(pair);
 
       const registerVerifierParams = {

@@ -105,7 +105,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
 
         Vector.UintVector memory vector = Vector.newUint(proveIdentityParams_.inputs);
         vector.push(uint256(registerProofInfo_.registerProofParams.commitment));
-        vector.push(registerProofInfo_.votingId);
+        vector.push(uint256(uint160(registerProofInfo_.votingAddress)));
 
         queryValidator_.verify(
             proveIdentityParams_.statesMerkleData,

@@ -110,7 +110,10 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         require(!commitments[commitment_], "Voting: commitment already exists");
 
         IRegisterVerifier.RegisterProofInfo memory registerProofInfo_ = IRegisterVerifier
-            .RegisterProofInfo({registerProofParams: registerProofParams_, votingId: 0});
+            .RegisterProofInfo({
+                registerProofParams: registerProofParams_,
+                votingAddress: address(this)
+            });
 
         if (isTransitState_) {
             registerVerifier.transitStateAndProveRegistration(
@@ -135,7 +138,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
     function vote(
         bytes32 root_,
         bytes32 nullifierHash_,
-        uint256 voteId_,
+        uint256 vote_,
         VerifierHelper.ProofPoints memory proof_
     ) external {
         require(
@@ -148,7 +151,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
 
         require(
             voteVerifier.verifyProofSafe(
-                [uint256(root_), uint256(nullifierHash_), voteId_, uint256(uint160(address(this)))]
+                [uint256(root_), uint256(nullifierHash_), vote_, uint256(uint160(address(this)))]
                     .asDynamic(),
                 proof_,
                 4
@@ -158,9 +161,9 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
 
         nullifies[nullifierHash_] = true;
 
-        votesPerCandidate[voteId_]++;
+        votesPerCandidate[vote_]++;
 
-        emit UserVoted(msg.sender, root_, nullifierHash_, voteId_, block.number);
+        emit UserVoted(msg.sender, root_, nullifierHash_, vote_, block.number);
     }
 
     /**

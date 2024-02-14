@@ -14,7 +14,7 @@ interface IRegisterVerifier is IBaseVerifier {
 
     struct RegisterProofInfo {
         RegisterProofParams registerProofParams;
-        uint256 votingId;
+        address votingAddress;
     }
 
     event RegisterAccepted(uint256 identityId, RegisterProofInfo registerProofInfo);
