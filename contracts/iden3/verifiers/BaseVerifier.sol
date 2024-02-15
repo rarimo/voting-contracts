@@ -100,12 +100,5 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
         );
     }
 
-    function _checkChallenge(uint256 challenge_) internal view virtual {
-        require(
-            msg.sender == GenesisUtils.int256ToAddress(challenge_),
-            "BaseVerifier: Address in proof is not a sender address."
-        );
-    }
-
     function _authorizeUpgrade(address) internal override onlyOwner {}
 }

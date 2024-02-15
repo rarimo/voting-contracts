@@ -24,6 +24,11 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     // documentNullifier => RegisterProofInfo
     mapping(uint256 => RegisterProofInfo) internal _registrationProofInfo;
 
+    modifier onlyVoting(RegisterProofInfo memory registerProofInfo_) {
+        _onlyVoting(registerProofInfo_);
+        _;
+    }
+
     function __RegisterVerifier_init(IZKPQueriesStorage zkpQueriesStorage_) external initializer {
         __BaseVerifier_init(zkpQueriesStorage_);
     }
@@ -34,7 +39,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     function proveRegistration(
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_
-    ) external {
+    ) external onlyVoting(registerProofInfo_) {
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
 
@@ -45,7 +50,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_,
         TransitStateParams memory transitStateParams_
-    ) external {
+    ) external onlyVoting(registerProofInfo_) {
         _transitState(transitStateParams_);
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
@@ -128,7 +133,13 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         );
 
         _checkAllowedIssuer(queryId_, proveIdentityParams_.statesMerkleData.issuerId);
-        _checkChallenge(proveIdentityParams_.inputs[queryValidator_.getChallengeInputIndex()]);
+    }
+
+    function _onlyVoting(RegisterProofInfo memory registerProofInfo_) private view {
+        require(
+            msg.sender == registerProofInfo_.votingAddress,
+            "RegisterVerifier: the caller is not the voting contract."
+        );
     }
 
     function _toUint256(bool x) private pure returns (uint256 r) {
