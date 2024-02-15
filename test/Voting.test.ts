@@ -170,6 +170,16 @@ describe("Voting", () => {
 
       await expect(voting.__Voting_init(votingParams)).to.be.revertedWith("Voting: candidates must be provided");
     });
+
+    it("should revert if too many candidates are provided", async () => {
+      const votingParams = {
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+        candidates: new Array(101).fill(ethers.ZeroHash),
+      };
+
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith("Voting: too many candidates");
+    });
   });
 
   describe("#registerForVoting", () => {
@@ -279,7 +289,7 @@ describe("Voting", () => {
       ).to.be.revertedWith("Voting: Invalid vote proof");
     });
 
-    it("should revert if vote with incorrect nullifier hash", async () => {
+    it("should revert if vote with non-existing root", async () => {
       await expect(
         voting.vote(
           ethers.ZeroHash,

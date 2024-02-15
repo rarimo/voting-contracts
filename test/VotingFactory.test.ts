@@ -7,6 +7,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getPoseidon, Reverter } from "@test-helpers";
 
 import { IVoting, VotingFactory, VotingRegistry, Voting, Voting__factory } from "@ethers-v6";
+import { IMPLEMENTATION_SLOT } from "@scripts";
 
 describe("VotingFactory", () => {
   const reverter = new Reverter();
@@ -14,13 +15,14 @@ describe("VotingFactory", () => {
   const VOTING_TYPE = "Voting Type 1";
 
   let OWNER: SignerWithAddress;
+  let FIRST: SignerWithAddress;
 
   let votingImplementation: Voting;
   let votingFactory: VotingFactory;
   let votingRegistry: VotingRegistry;
 
   before("setup", async () => {
-    [OWNER] = await ethers.getSigners();
+    [OWNER, FIRST] = await ethers.getSigners();
 
     const VotingFactory = await ethers.getContractFactory("VotingFactory");
     votingFactory = await VotingFactory.deploy();
@@ -77,28 +79,19 @@ describe("VotingFactory", () => {
     });
 
     it("should revert if trying to create a voting with non-existing type", async () => {
-      await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]))"]("Non-existing", votingParams),
-      ).to.be.revertedWith("VotingFactory: voting type does not exist");
+      await expect(votingFactory.createVoting("Non-existing", votingParams)).to.be.revertedWith(
+        "VotingFactory: voting type does not exist",
+      );
 
       await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]),bytes32)"](
-          "Non-existing type",
-          votingParams,
-          ethers.ZeroHash,
-        ),
+        votingFactory.createVotingWithSalt("Non-existing type", votingParams, ethers.ZeroHash),
       ).to.be.revertedWith("VotingFactory: voting type does not exist");
     });
 
     it("should create a voting with correct parameters", async () => {
-      await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]))"](VOTING_TYPE, votingParams),
-      ).to.emit(votingFactory, "VotingCreated");
+      await expect(votingFactory.createVoting(VOTING_TYPE, votingParams)).to.emit(votingFactory, "VotingCreated");
 
-      const voting = Voting__factory.connect(
-        (await votingRegistry["listPools(string,uint256,uint256)"](VOTING_TYPE, 0, 1))[0],
-        OWNER,
-      );
+      const voting = Voting__factory.connect((await votingRegistry.listPoolsByType(VOTING_TYPE, 0, 1))[0], OWNER);
 
       const votingInfo = await voting.votingInfo();
 
@@ -110,15 +103,9 @@ describe("VotingFactory", () => {
     it("should create a deterministic voting with correct parameters", async () => {
       const salt = ethers.hexlify(ethers.randomBytes(32));
 
-      const predictedAddress = await votingFactory.predictVotingAddress(VOTING_TYPE, votingParams, salt);
+      const predictedAddress = await votingFactory.predictVotingAddress(VOTING_TYPE, OWNER.address, salt);
 
-      await expect(
-        votingFactory["createVoting(string,(string,uint256,uint256,uint256,bytes32[]),bytes32)"](
-          VOTING_TYPE,
-          votingParams,
-          salt,
-        ),
-      )
+      await expect(votingFactory.createVotingWithSalt(VOTING_TYPE, votingParams, salt))
         .to.emit(votingFactory, "VotingCreated")
         .withArgs(VOTING_TYPE, OWNER.address, predictedAddress);
 
@@ -129,6 +116,23 @@ describe("VotingFactory", () => {
       expect(votingInfo.remark).to.equal(votingParams.remark);
       expect(votingInfo["1"].commitmentStartTime).to.equal(votingParams.commitmentStart);
       expect(await voting.smtTreeMaxDepth()).to.equal(80);
+    });
+  });
+
+  describe("#upgradeImpleemntation", () => {
+    it("should upgrade the implementation only by the owner", async () => {
+      const VotingFactory = await ethers.getContractFactory("VotingFactory");
+      const newImplementation = await VotingFactory.deploy();
+
+      await expect(votingFactory.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.revertedWith(
+        "VotingFactory: only registry owner can upgrade",
+      );
+
+      await votingFactory.connect(OWNER).upgradeTo(await newImplementation.getAddress());
+
+      expect(await ethers.provider.getStorage(await votingFactory.getAddress(), IMPLEMENTATION_SLOT)).to.be.equal(
+        ethers.toBeHex(await newImplementation.getAddress(), 32).toLowerCase(),
+      );
     });
   });
 });

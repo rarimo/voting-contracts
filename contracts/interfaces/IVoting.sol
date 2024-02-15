@@ -48,6 +48,7 @@ interface IVoting {
         uint256 commitmentStartTime;
         uint256 votingStartTime;
         uint256 votingEndTime;
+        bytes32[] candidates;
     }
 
     /**
@@ -82,13 +83,11 @@ interface IVoting {
      * @param user Address of the user registering
      * @param proveIdentityParams Parameters used for proving the user's identity
      * @param registerProofParams Parameters used for the registration proof
-     * @param blockNumber Block number at which the registration occurred
      */
     event UserRegistered(
         address indexed user,
         IBaseVerifier.ProveIdentityParams proveIdentityParams,
-        IRegisterVerifier.RegisterProofParams registerProofParams,
-        uint256 blockNumber
+        IRegisterVerifier.RegisterProofParams registerProofParams
     );
 
     /**
@@ -97,15 +96,8 @@ interface IVoting {
      * @param root Root of the SMT tree that was used at the time of voting
      * @param nullifierHash Hash of the nullifier to prevent double voting
      * @param candidate Identifier of the candidate voted for
-     * @param blockNumber Block number at which the vote was cast
      */
-    event UserVoted(
-        address indexed user,
-        bytes32 root,
-        bytes32 nullifierHash,
-        bytes32 candidate,
-        uint256 blockNumber
-    );
+    event UserVoted(address indexed user, bytes32 root, bytes32 nullifierHash, bytes32 candidate);
 
     /**
      * @notice Initializes a new voting session with specified parameters

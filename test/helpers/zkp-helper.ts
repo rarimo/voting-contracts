@@ -30,15 +30,14 @@ export function getNullifierHash(pair: SecretPair): string {
   return poseidonHash(pair.nullifier);
 }
 
-export async function getZKP(pair: SecretPair, root: string, voteId: string, votingId: string, siblings: string[]) {
+export async function getZKP(pair: SecretPair, root: string, vote: string, votingAddress: string, siblings: string[]) {
   const nullifierHash = getNullifierHash(pair);
 
   const { proof } = await snarkjs.groth16.fullProve(
     {
       root: BigInt(root),
-      nullifierHash: BigInt(nullifierHash),
-      voteId,
-      votingId,
+      vote,
+      votingAddress,
       secret: pair.secret,
       nullifier: pair.nullifier,
       siblings,

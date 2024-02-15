@@ -43,7 +43,10 @@ interface IVotingRegistry {
      * @param voting_ The address of the voting instance to check.
      * @return bool True if the voting instance exists within the specified voting pool type, false otherwise.
      */
-    function isVotingExist(string memory name_, address voting_) external view returns (bool);
+    function isVotingExistByType(
+        string memory name_,
+        address voting_
+    ) external view returns (bool);
 
     /**
      * @notice Checks if a voting instance exists within the pools created by a specific proposer.
@@ -51,21 +54,26 @@ interface IVotingRegistry {
      * @param voting_ The address of the voting instance to check.
      * @return bool True if the voting instance exists within the pools created by the specified proposer, false otherwise.
      */
-    function isVotingExist(address proposer_, address voting_) external view returns (bool);
+    function isVotingExistByProposer(
+        address proposer_,
+        address voting_
+    ) external view returns (bool);
 
     /**
      * @notice Counts the number of voting instances within a specific voting pool type.
      * @param votingType_ The name associated with the voting pool type.
      * @return uint256 The number of voting instances within the specified voting pool type.
      */
-    function votingCountWithinPool(string memory votingType_) external view returns (uint256);
+    function votingCountWithinPoolByType(
+        string memory votingType_
+    ) external view returns (uint256);
 
     /**
      * @notice Counts the number of voting instances created by a specific proposer.
      * @param proposer_ The address of the proposer.
      * @return uint256 The number of voting instances created by the specified proposer.
      */
-    function votingCountWithinPool(address proposer_) external view returns (uint256);
+    function votingCountWithinPoolByProposer(address proposer_) external view returns (uint256);
 
     /**
      * @notice Lists voting pools by their type in a paginated manner.
@@ -75,7 +83,7 @@ interface IVotingRegistry {
      * @param limit_ The maximum number of pool addresses to return.
      * @return pools_ Array of proxy addresses for the voting pools of the specified type.
      */
-    function listPools(
+    function listPoolsByType(
         string memory name_,
         uint256 offset_,
         uint256 limit_
@@ -89,7 +97,7 @@ interface IVotingRegistry {
      * @param limit_ The maximum number of pool addresses to return.
      * @return pools_ Array of proxy addresses for the voting pools created by the specified proposer.
      */
-    function listPools(
+    function listPoolsByProposer(
         address proposer_,
         uint256 offset_,
         uint256 limit_

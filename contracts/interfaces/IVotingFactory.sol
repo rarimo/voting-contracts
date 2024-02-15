@@ -34,7 +34,7 @@ interface IVotingFactory {
      * @param votingParams_ The configuration parameters for the voting
      * @param salt_ A unique salt to determine the address of the deployed contract
      */
-    function createVoting(
+    function createVotingWithSalt(
         string memory votingType_,
         IVoting.VotingParams calldata votingParams_,
         bytes32 salt_
@@ -43,13 +43,13 @@ interface IVotingFactory {
     /**
      * @notice Predicts the address of a voting instance that would be deployed with the given parameters and salt
      * @param poolType_ The type of the voting pool to be created
-     * @param votingParams_ The configuration parameters for the voting
+     * @param proposer_ The address of the creator initiating the creation of the voting instance
      * @param salt_ The unique salt that would be used for deployment
      * @return The predicted address of the voting instance that would be created
      */
     function predictVotingAddress(
         string memory poolType_,
-        IVoting.VotingParams calldata votingParams_,
+        address proposer_,
         bytes32 salt_
     ) external view returns (address);
 }

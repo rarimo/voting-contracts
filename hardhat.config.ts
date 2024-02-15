@@ -31,6 +31,18 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       gasMultiplier: 1.2,
     },
+    devnet: {
+      url: "http://63.34.190.209:8545/",
+      accounts: privateKey(),
+    },
+    testnet: {
+      url: "https://rpc.qtestnet.org/",
+      accounts: privateKey(),
+    },
+    mainnet: {
+      url: "https://rpc.q.org",
+      accounts: privateKey(),
+    },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: privateKey(),
@@ -48,8 +60,37 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
+      devnet: "abc",
+      testnet: "abc",
+      mainnet: "abc",
       sepolia: `${process.env.ETHERSCAN_KEY}`,
     },
+    customChains: [
+      {
+        network: "devnet",
+        chainId: 35442,
+        urls: {
+          apiURL: "https://explorer.qdevnet.org/api",
+          browserURL: "https://explorer.qdevnet.org",
+        },
+      },
+      {
+        network: "testnet",
+        chainId: 35443,
+        urls: {
+          apiURL: "https://explorer.qtestnet.org/api",
+          browserURL: "https://explorer.qtestnet.org",
+        },
+      },
+      {
+        network: "mainnet",
+        chainId: 35441,
+        urls: {
+          apiURL: "https://explorer.q.org/api",
+          browserURL: "https://explorer.q.org",
+        },
+      },
+    ],
   },
   migrate: {
     pathToMigrations: "./deploy/",

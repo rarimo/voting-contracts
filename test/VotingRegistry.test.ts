@@ -6,6 +6,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { Reverter } from "@test-helpers";
 
 import { VotingRegistry } from "@ethers-v6";
+import { IMPLEMENTATION_SLOT } from "@scripts";
 
 describe("VotingRegistry", () => {
   const reverter = new Reverter();
@@ -79,17 +80,30 @@ describe("VotingRegistry", () => {
     it("should add a valid pool", async () => {
       await votingRegistry.connect(FACTORY).addProxyPool("Voting Type 1", OWNER.address, FIRST.address);
 
-      expect(await votingRegistry["isVotingExist(string,address)"]("Voting Type 1", FIRST.address)).to.be.true;
-      expect(await votingRegistry["votingCountWithinPool(string)"]("Voting Type 1")).to.be.equal(1);
-      expect(await votingRegistry["listPools(string,uint256,uint256)"]("Voting Type 1", 0, 1)).to.be.deep.equal([
-        FIRST.address,
-      ]);
+      expect(await votingRegistry.isVotingExistByType("Voting Type 1", FIRST.address)).to.be.true;
+      expect(await votingRegistry.votingCountWithinPoolByType("Voting Type 1")).to.be.equal(1);
+      expect(await votingRegistry.listPoolsByType("Voting Type 1", 0, 1)).to.be.deep.equal([FIRST.address]);
 
-      expect(await votingRegistry["isVotingExist(address,address)"](OWNER.address, FIRST.address)).to.be.true;
-      expect(await votingRegistry["votingCountWithinPool(address)"](OWNER.address)).to.be.equal(1);
-      expect(await votingRegistry["listPools(address,uint256,uint256)"](OWNER.address, 0, 1)).to.be.deep.equal([
-        FIRST.address,
-      ]);
+      expect(await votingRegistry.isVotingExistByProposer(OWNER.address, FIRST.address)).to.be.true;
+      expect(await votingRegistry.votingCountWithinPoolByProposer(OWNER.address)).to.be.equal(1);
+      expect(await votingRegistry.listPoolsByProposer(OWNER.address, 0, 1)).to.be.deep.equal([FIRST.address]);
+    });
+  });
+
+  describe("#upgradeImpleemntation", () => {
+    it("should upgrade the implementation only by the owner", async () => {
+      const VotingRegistry = await ethers.getContractFactory("VotingRegistry");
+      const newImplementation = await VotingRegistry.deploy();
+
+      await expect(votingRegistry.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
+
+      await votingRegistry.connect(OWNER).upgradeTo(await newImplementation.getAddress());
+
+      expect(await ethers.provider.getStorage(await votingRegistry.getAddress(), IMPLEMENTATION_SLOT)).to.be.equal(
+        ethers.toBeHex(await newImplementation.getAddress(), 32).toLowerCase(),
+      );
     });
   });
 });

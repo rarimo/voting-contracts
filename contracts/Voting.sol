@@ -21,6 +21,8 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
     using TypeCaster for *; // TypeCaster library for type conversions.
     using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
 
+    uint256 public constant MAX_CANDIDATES = 100;
+
     /// The contract for registration proof verification
     IRegisterVerifier public immutable registerVerifier;
 
@@ -78,6 +80,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         votingInfo.values.votingEndTime =
             votingInfo.values.votingStartTime +
             votingParams_.votingPeriod;
+        votingInfo.values.candidates = votingParams_.candidates;
 
         for (uint256 i = 0; i < votingParams_.candidates.length; i++) {
             candidates[votingParams_.candidates[i]] = true;
@@ -124,7 +127,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         commitments[commitment_] = true;
         rootsHistory[getRoot()] = true;
 
-        emit UserRegistered(msg.sender, proveIdentityParams_, registerProofParams_, block.number);
+        emit UserRegistered(msg.sender, proveIdentityParams_, registerProofParams_);
     }
 
     /**
@@ -148,8 +151,8 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         require(
             voteVerifier.verifyProofSafe(
                 [
-                    uint256(root_),
                     uint256(nullifierHash_),
+                    uint256(root_),
                     uint256(candidate_),
                     uint256(uint160(address(this)))
                 ].asDynamic(),
@@ -164,7 +167,7 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         votesPerCandidate[candidate_]++;
         votingInfo.counters.votesCount++;
 
-        emit UserVoted(msg.sender, root_, nullifierHash_, candidate_, block.number);
+        emit UserVoted(msg.sender, root_, nullifierHash_, candidate_);
     }
 
     /**
@@ -209,5 +212,6 @@ contract Voting is IVoting, PoseidonSMT, Initializable, OwnableUpgradeable {
         );
         require(votingParams_.votingPeriod > 0, "Voting: voting period must be greater than 0");
         require(votingParams_.candidates.length > 0, "Voting: candidates must be provided");
+        require(votingParams_.candidates.length <= MAX_CANDIDATES, "Voting: too many candidates");
     }
 }

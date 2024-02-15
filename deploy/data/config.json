@@ -1,31 +1,31 @@
 {
   "validatorContractInfo": {
-    "validatorAddr": "0x0000000000000000000000000000000000000000",
+    "validatorAddr": "",
     "identitiesStatesUpdateTime": "3600",
     "zkpVerifierAddr": ""
   },
   "stateContractInfo": {
-    "stateAddr": "0x0000000000000000000000000000000000000000",
+    "stateAddr": "",
     "stateInitParams": {
-      "signer": "0xf41ceE234219D6cc3d90A6996dC3276aD378cfCF",
-      "sourceStateContract": "0xf41ceE234219D6cc3d90A6996dC3276aD378cfCF",
+      "signer": "0x038D006846a3e203738cF80A02418e124203beb2",
+      "sourceStateContract": "0x753a8678c85d5fb70A97CFaE37c84CE2fD67EDE8",
       "sourceChainName": "Rarimo",
-      "chainName": "Sepolia"
+      "chainName": "Q Devnet"
     },
-    "isLightweight": false
+    "isLightweight": true
   },
-  "poseidonFacade": "0x0000000000000000000000000000000000000000",
-  "zkpQueriesStorage": "0x0000000000000000000000000000000000000000",
+  "poseidonFacade": "",
+  "zkpQueriesStorage": "",
   "registerVerifierInfo": {
-    "registerVerifierAddr": "0x0000000000000000000000000000000000000000"
+    "registerVerifierAddr": ""
   },
   "zkpQueries": [
     {
       "queryId": "REGISTER_PROOF",
       "validatorAddr": "",
       "query": {
-        "schema": "26846794803646269268739361127897291025",
-        "claimPathKey": "16153502378554866159038850585713705546745830858436223350513476757548188765156",
+        "schema": "31584121850720233142680868736086212256",
+        "claimPathKey": "20466283553974326613475625419924820003272899689641632634246776256953592850744",
         "operator": "1",
         "value": ["1"],
         "queryHash": "0",
