@@ -1,7 +1,8 @@
 {
   "validatorContractInfo": {
     "validatorAddr": "0x0000000000000000000000000000000000000000",
-    "identitiesStatesUpdateTime": "3600"
+    "identitiesStatesUpdateTime": "3600",
+    "zkpVerifierAddr": ""
   },
   "stateContractInfo": {
     "stateAddr": "0x0000000000000000000000000000000000000000",

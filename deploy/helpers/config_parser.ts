@@ -12,6 +12,7 @@ export type Config = {
 
 export type ValidatorContractInfo = {
   validatorAddr?: string;
+  zkpVerifierAddr?: string;
   identitiesStatesUpdateTime?: string | number;
 };
 

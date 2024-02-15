@@ -49,7 +49,12 @@ export async function deployQueryValidator(deployer: Deployer, config: Config) {
       throw new Error("Invalid identities states update time");
     }
 
-    await deployMTPValidator(deployer, stateAddr, identitiesStatesUpdateTime);
+    await deployMTPValidator(
+      deployer,
+      stateAddr,
+      identitiesStatesUpdateTime,
+      config.validatorContractInfo.zkpVerifierAddr,
+    );
   } else {
     await deployer.save(QueryMTPValidator__factory, config.validatorContractInfo.validatorAddr!);
   }
@@ -87,8 +92,14 @@ async function deployMTPValidator(
   deployer: Deployer,
   stateContractAddr: string,
   identitiesStatesUpdateTime: string | number,
+  zkpVerifierAddr?: string,
 ) {
-  const queryMTPVerifier = await deployer.deploy(VerifierMTP__factory);
+  let queryMTPVerifierAddress: string | undefined = zkpVerifierAddr;
+
+  if (isZeroAddr(queryMTPVerifierAddress)) {
+    queryMTPVerifierAddress = await (await deployer.deploy(VerifierMTP__factory)).getAddress();
+  }
+
   const queryMTPValidatorImpl = await deployer.deploy(QueryMTPValidator__factory);
   const queryMTPValidatorProxy = await deployer.deploy(
     ERC1967Proxy__factory,
@@ -102,7 +113,7 @@ async function deployMTPValidator(
   );
 
   await queryMTPValidator.__QueryMTPValidator_init(
-    await queryMTPVerifier.getAddress(),
+    queryMTPVerifierAddress!,
     stateContractAddr,
     identitiesStatesUpdateTime,
   );

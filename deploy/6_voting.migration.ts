@@ -1,5 +1,3 @@
-import { ethers } from "hardhat";
-
 import { Deployer, Reporter } from "@solarity/hardhat-migrate";
 
 import {
@@ -9,6 +7,7 @@ import {
   VotingFactory__factory,
   VotingRegistry__factory,
 } from "@ethers-v6";
+import { getDeployedVerifierContract } from "@deploy-helper";
 
 export = async (deployer: Deployer) => {
   let votingRegistry = await deployer.deploy(VotingRegistry__factory);
@@ -28,8 +27,13 @@ export = async (deployer: Deployer) => {
   await votingFactory.__VotingFactory_init(await votingRegistry.getAddress());
 
   const voteVerifier = await deployer.deploy(VoteVerifier__factory);
+  const registerVerifier = await getDeployedVerifierContract(deployer);
 
-  const voting = await deployer.deploy(Voting__factory, [await voteVerifier.getAddress(), ethers.ZeroAddress, 80]);
+  const voting = await deployer.deploy(Voting__factory, [
+    await voteVerifier.getAddress(),
+    await registerVerifier.getAddress(),
+    80,
+  ]);
 
   await votingRegistry.setNewImplementations(["Simple Voting"], [await voting.getAddress()]);
 
