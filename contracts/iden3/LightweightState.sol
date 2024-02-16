@@ -31,7 +31,7 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
         string calldata sourceChainName_,
         string calldata chainName_
     ) external initializer {
-        __Signers_init(signer_, chainName_);
+        __Signers_init(signer_, address(0), chainName_);
 
         sourceStateContract = sourceStateContract_;
         sourceChainName = sourceChainName_;
@@ -52,7 +52,7 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
     ) external override {
         require(newSourceStateContract_ != address(0), "LightweightState: Zero address");
 
-        validateChangeAddressSignature(
+        _validateChangeAddressSignature(
             uint8(MethodId.ChangeSourceStateContract),
             address(this),
             newSourceStateContract_,
@@ -136,7 +136,7 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
     ) internal override {
         require(newImplementation_ != address(0), "LightweightState: Zero address");
 
-        validateChangeAddressSignature(
+        _validateChangeAddressSignature(
             uint8(MethodId.AuthorizeUpgrade),
             address(this),
             newImplementation_,
