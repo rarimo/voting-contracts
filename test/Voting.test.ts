@@ -6,7 +6,15 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { deepClone, VotingStatus } from "@scripts";
 
-import { getPoseidon, poseidonHash, Reverter, generateSecrets, getCommitment, getZKP, SecretPair } from "@test-helpers";
+import {
+  getPoseidon,
+  poseidonHash,
+  Reverter,
+  generateSecrets,
+  getCommitment,
+  getVoteZKP,
+  SecretPair,
+} from "@test-helpers";
 
 import { IVoting, VoteVerifier, VotingMock } from "@ethers-v6";
 import { VerifierHelper } from "@/generated-types/contracts/Voting";
@@ -252,7 +260,7 @@ describe("Voting", () => {
 
       const onchainProof = await voting.getProof(commitmentIndex);
 
-      zkpProof = await getZKP(
+      zkpProof = await getVoteZKP(
         pair,
         root,
         ethers.toBeHex(OWNER.address, 32),

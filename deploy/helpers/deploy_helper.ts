@@ -6,7 +6,6 @@ const { poseidonContract } = require("circomlibjs");
 
 import {
   ERC1967Proxy__factory,
-  VerifierMTP__factory,
   QueryMTPValidator__factory,
   LightweightState__factory,
   ZKPQueriesStorage__factory,
@@ -97,7 +96,7 @@ async function deployMTPValidator(
   let queryMTPVerifierAddress: string | undefined = zkpVerifierAddr;
 
   if (isZeroAddr(queryMTPVerifierAddress)) {
-    queryMTPVerifierAddress = await (await deployer.deploy(VerifierMTP__factory)).getAddress();
+    queryMTPVerifierAddress = await (await deployer.deploy(RegisterVerifier__factory)).getAddress();
   }
 
   const queryMTPValidatorImpl = await deployer.deploy(QueryMTPValidator__factory);

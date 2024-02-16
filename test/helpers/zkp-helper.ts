@@ -30,7 +30,13 @@ export function getNullifierHash(pair: SecretPair): string {
   return poseidonHash(pair.nullifier);
 }
 
-export async function getZKP(pair: SecretPair, root: string, vote: string, votingAddress: string, siblings: string[]) {
+export async function getVoteZKP(
+  pair: SecretPair,
+  root: string,
+  vote: string,
+  votingAddress: string,
+  siblings: string[],
+) {
   const nullifierHash = getNullifierHash(pair);
 
   const { proof } = await snarkjs.groth16.fullProve(
@@ -59,46 +65,6 @@ export async function getZKP(pair: SecretPair, root: string, vote: string, votin
     formattedProof,
     nullifierHash,
   };
-}
-
-export async function getPreImageZKP(pair: SecretPair) {
-  const { proof } = await snarkjs.groth16.fullProve(
-    {
-      secret: pair.secret,
-      nullifier: pair.nullifier,
-    },
-    `./test/circuits/poseidon.wasm`,
-    `./test/circuits/poseidon.zkey`,
-  );
-
-  swap(proof.pi_b[0], 0, 1);
-  swap(proof.pi_b[1], 0, 1);
-
-  const formattedProof: VerifierHelper.ProofPointsStruct = {
-    a: proof.pi_a.slice(0, 2).map((x: any) => padElement(BigInt(x))),
-    b: proof.pi_b.slice(0, 2).map((x: any[]) => x.map((y: any) => padElement(BigInt(y)))),
-    c: proof.pi_c.slice(0, 2).map((x: any) => padElement(BigInt(x))),
-  };
-
-  return {
-    formattedProof,
-  };
-}
-
-export function checkMerkleProof(leaf: string, pathIndices: number[], pathElements: string[], _root: string) {
-  for (let i = 0; i < pathIndices.length; i++) {
-    const pathElement = pathElements[i];
-    const pathIndex = pathIndices[i];
-
-    if (pathIndex === 0) {
-      leaf = poseidonHash(pathElement + leaf.replace("0x", ""));
-    } else {
-      leaf = poseidonHash(leaf + pathElement.replace("0x", ""));
-    }
-  }
-
-  console.log(leaf);
-  console.log(_root);
 }
 
 // Function to swap two elements in an array
