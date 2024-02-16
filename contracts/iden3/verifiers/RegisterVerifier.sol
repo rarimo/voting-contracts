@@ -120,8 +120,8 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         uint256 queryHash_ = zkpQueriesStorage.getQueryHash(circuitQuery_);
 
         Vector.UintVector memory vector = Vector.newUint(proveIdentityParams_.inputs);
-        vector.push(uint256(registerProofInfo_.registerProofParams.commitment));
         vector.push(uint256(uint160(registerProofInfo_.votingAddress)));
+        vector.push(uint256(registerProofInfo_.registerProofParams.commitment));
 
         queryValidator_.verify(
             proveIdentityParams_.statesMerkleData,
