@@ -67,7 +67,8 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
         GistRootData calldata gistData_,
         bytes calldata proof_
     ) external override {
-        _checkMerkleSignature(_getSignHash(gistData_, newIdentitiesStatesRoot_), proof_);
+        // TODO: why do we need Merkle proof here? As it is possible to bypass it.
+        _checkMerkleSignature(getSignHash(gistData_, newIdentitiesStatesRoot_), proof_);
 
         require(
             !isIdentitiesStatesRootExists(newIdentitiesStatesRoot_),
@@ -88,6 +89,22 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
         );
 
         emit SignedStateTransited(gistData_.root, newIdentitiesStatesRoot_);
+    }
+
+    function getSignHash(
+        GistRootData calldata gistData_,
+        bytes32 identitiesStatesRoot_
+    ) public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    gistData_.root,
+                    gistData_.createdAtTimestamp,
+                    identitiesStatesRoot_,
+                    sourceStateContract,
+                    sourceChainName
+                )
+            );
     }
 
     function isIdentitiesStatesRootExists(bytes32 root_) public view returns (bool) {
@@ -146,21 +163,5 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
 
     function _authorizeUpgrade(address) internal pure virtual override {
         revert("LightweightState: This upgrade method is off");
-    }
-
-    function _getSignHash(
-        GistRootData calldata gistData_,
-        bytes32 identitiesStatesRoot_
-    ) internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    gistData_.root,
-                    gistData_.createdAtTimestamp,
-                    identitiesStatesRoot_,
-                    sourceStateContract,
-                    sourceChainName
-                )
-            );
     }
 }

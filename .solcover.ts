@@ -1,4 +1,4 @@
 module.exports = {
-  skipFiles: ["interfaces/", "mock/", "verifiers/", "iden3/", "utils/"],
+  skipFiles: ["interfaces/", "mock/", "iden3/State.sol"],
   configureYulOptimizer: true,
 };
