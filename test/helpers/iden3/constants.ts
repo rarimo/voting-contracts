@@ -12,7 +12,7 @@ export const requestID = 32n;
 
 export const IssuerLevels = 40;
 export const ClaimLevels = 32;
-export const ValueArraySize = 64;
+export const ValueArraySize = 1;
 export const IDOwnershipLevels = 40;
 export const OnChainLevels = 64;
 

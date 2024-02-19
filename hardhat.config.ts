@@ -31,15 +31,15 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       gasMultiplier: 1.2,
     },
-    devnet: {
-      url: "http://63.34.190.209:8545/",
+    qDevnet: {
+      url: "https://rpc.qdevnet.org/",
       accounts: privateKey(),
     },
-    testnet: {
+    qTestnet: {
       url: "https://rpc.qtestnet.org/",
       accounts: privateKey(),
     },
-    mainnet: {
+    qMainnet: {
       url: "https://rpc.q.org",
       accounts: privateKey(),
     },
@@ -60,14 +60,14 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      devnet: "abc",
-      testnet: "abc",
-      mainnet: "abc",
+      qDevnet: "abc",
+      qTestnet: "abc",
+      qMainnet: "abc",
       sepolia: `${process.env.ETHERSCAN_KEY}`,
     },
     customChains: [
       {
-        network: "devnet",
+        network: "qDevnet",
         chainId: 35442,
         urls: {
           apiURL: "https://explorer.qdevnet.org/api",
@@ -75,7 +75,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "testnet",
+        network: "qTestnet",
         chainId: 35443,
         urls: {
           apiURL: "https://explorer.qtestnet.org/api",
@@ -83,7 +83,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        network: "mainnet",
+        network: "qMainnet",
         chainId: 35441,
         urls: {
           apiURL: "https://explorer.q.org/api",

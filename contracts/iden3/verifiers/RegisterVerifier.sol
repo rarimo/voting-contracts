@@ -105,7 +105,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         IZKPQueriesStorage.CircuitQuery memory circuitQuery_ = zkpQueriesStorage
             .getStoredCircuitQuery(queryId_);
 
-        uint256[] memory values_ = new uint256[](64);
+        uint256[] memory values_ = new uint256[](1);
         values_[0] = PoseidonUnit3L.poseidon(
             [
                 1, // Is Adult should be always 1

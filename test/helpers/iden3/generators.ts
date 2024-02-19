@@ -16,6 +16,7 @@ import {
   CredentialAtomicMTPOnChainV2Inputs,
   poseidonHashValue,
   RegistrationUserClaim,
+  ValueArraySize,
 } from "@/test/helpers";
 
 export async function generateMTPData(
@@ -127,7 +128,7 @@ export async function generateMTPData(
     operator: Operator.EQ,
     slotIndex: 0,
     timestamp: timestamp,
-    value: prepareValue([valueKey], 64),
+    value: prepareValue([valueKey], ValueArraySize),
   };
 
   const valuesHash = poseidonHashValue(inputs.value);
@@ -247,7 +248,7 @@ export async function generateRegistrationData(
     operator: Operator.EQ,
     slotIndex: 6,
     timestamp: timestamp,
-    value: prepareValue([valueHashAtSlot2], 64),
+    value: prepareValue([valueHashAtSlot2], ValueArraySize),
   };
 
   const valuesHash = poseidonHashValue(inputs.value);
