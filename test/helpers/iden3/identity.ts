@@ -1,3 +1,5 @@
+import "mock-local-storage";
+
 import { LocalStorageDB, Merkletree, Proof, str2Bytes } from "@iden3/js-merkletree";
 
 import { poseidon, PrivateKey, Signature } from "@iden3/js-crypto";
@@ -18,10 +20,10 @@ export class Identity {
   public revLevels: number;
   public rootsLevels: number;
 
-  constructor(pk: string, claimLevels: number, revLevels: number, rootsLevels: number) {
-    this.claimTree = new Merkletree(new LocalStorageDB(str2Bytes("identity-claim-tree")), true, claimLevels);
-    this.revTree = new Merkletree(new LocalStorageDB(str2Bytes("identity-rev-tree")), true, revLevels);
-    this.rootsTree = new Merkletree(new LocalStorageDB(str2Bytes("identity-roots-tree")), true, rootsLevels);
+  constructor(pk: string, claimLevels: number, revLevels: number, rootsLevels: number, prefix = "") {
+    this.claimTree = new Merkletree(new LocalStorageDB(str2Bytes(prefix + "identity-claim-tree")), true, claimLevels);
+    this.revTree = new Merkletree(new LocalStorageDB(str2Bytes(prefix + "identity-rev-tree")), true, revLevels);
+    this.rootsTree = new Merkletree(new LocalStorageDB(str2Bytes(prefix + "identity-roots-tree")), true, rootsLevels);
 
     this.claimLevels = claimLevels;
     this.revLevels = revLevels;
@@ -68,7 +70,9 @@ export class Identity {
 
   public async claimMTPRaw(claim: Claim): Promise<[Proof, bigint]> {
     const hiHv = claim.hiHv();
+
     const proof = await this.claimTree.generateProof(hiHv.hi);
+
     return [proof.proof, proof.value];
   }
 
@@ -82,32 +86,39 @@ export class Identity {
 
   public async signClaim(claim: Claim): Promise<Signature> {
     const hiHv = claim.hiHv();
+
     const commonHash = poseidon.hash([hiHv.hi, hiHv.hv]);
+
     return this.sign(commonHash);
   }
 
   public async claimMTP(claim: Claim): Promise<[bigint[], NodeAuxValue]> {
     const [proof, _] = await this.claimMTPRaw(claim);
+
     return PrepareProof(proof, this.claimLevels);
   }
 
   public async claimRevMTPRaw(claim: Claim): Promise<[Proof, bigint]> {
     const revNonce = claim.getRevocationNonce();
+
     const proof = await this.revTree.generateProof(revNonce);
+
     return [proof.proof, proof.value];
   }
 
   public async claimRevMTP(claim: Claim): Promise<[bigint[], NodeAuxValue]> {
     const [proof, _] = await this.claimRevMTPRaw(claim);
+
     return PrepareProof(proof, this.revLevels);
   }
 
-  public async IDHash(): Promise<bigint> {
+  public async idHash(): Promise<bigint> {
     return poseidon.hash([DID.idFromDID(this.id).bigInt()]);
   }
 
   public async addClaim(claim: Claim): Promise<void> {
     const hiHv = claim.hiHv();
+
     await this.claimTree.add(hiHv.hi, hiHv.hv);
   }
 }

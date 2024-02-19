@@ -1,6 +1,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+import { DID } from "@iden3/js-iden3-core";
+import { poseidon } from "@iden3/js-crypto";
+
+import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
+
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -14,17 +19,63 @@ import {
   getCommitment,
   getVoteZKP,
   SecretPair,
+  Identity,
+  CredentialAtomicMTPOnChainV2Inputs,
+  CredentialAtomicMTPOnChainV2Outputs,
+  UserPK,
+  IDOwnershipLevels,
+  IssuerPK,
+  IssuerLevels,
+  generateRegistrationData,
+  getRegisterZKP,
+  Operator,
+  deployPoseidonFacade,
 } from "@test-helpers";
 
-import { IVoting, VoteVerifier, VotingMock } from "@ethers-v6";
+import {
+  ILightweightState,
+  IVoting,
+  LightweightState,
+  PoseidonUnit3L,
+  QueryMTPValidator,
+  RegisterVerifier,
+  VoteVerifier,
+  VotingMock,
+  ZKPQueriesStorage,
+} from "@ethers-v6";
 import { VerifierHelper } from "@/generated-types/contracts/Voting";
-import { IBaseVerifier, IRegisterVerifier } from "@/generated-types/contracts/mock/VotingMock";
+import { IBaseVerifier } from "@/generated-types/contracts/mock/VotingMock";
+import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
+import { IZKPQueriesStorage } from "@/generated-types/contracts/iden3/ZKPQueriesStorage";
 
 describe("Voting", () => {
   const reverter = new Reverter();
 
+  const IDENTITES_STATES_UPDATE_TIME = 60 * 60;
+
+  const ZKP_QUERY_ID = "REGISTER_PROOF";
+
+  const ZKP_QUERY_INFO: IZKPQueriesStorage.QueryInfoStruct = {
+    queryValidator: ethers.ZeroAddress,
+    circuitId: "credentialAtomicQueryMTPV2OnChainVoting",
+    circuitQuery: {
+      schema: "31584121850720233142680868736086212256",
+      slotIndex: 6,
+      operator: Operator.EQ,
+      claimPathKey: 0n,
+      claimPathNotExists: 0n,
+      values: ["0"],
+    },
+  };
+
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
+  let SIGNER: HDNodeWallet;
+
+  let validator: QueryMTPValidator;
+  let stateContract: LightweightState;
+  let zkpQueriesStorage: ZKPQueriesStorage;
+  let registerVerifier: RegisterVerifier;
 
   let voting: VotingMock;
   let votingVerifier: VoteVerifier;
@@ -65,7 +116,6 @@ describe("Voting", () => {
   };
 
   let defaultRegisterVerifierParams: IRegisterVerifier.RegisterProofParamsStruct = {
-    isAdult: false,
     issuingAuthority: ethers.ZeroHash,
     commitment: ethers.ZeroHash,
     documentNullifier: ethers.ZeroHash,
@@ -73,6 +123,61 @@ describe("Voting", () => {
 
   before("setup", async () => {
     [OWNER, FIRST] = await ethers.getSigners();
+
+    const LightweightState = await ethers.getContractFactory("LightweightState");
+    stateContract = await LightweightState.deploy();
+
+    const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+    let proxy = await Proxy.deploy(await stateContract.getAddress(), "0x");
+
+    stateContract = stateContract.attach(await proxy.getAddress()) as LightweightState;
+
+    SIGNER = ethers.Wallet.createRandom() as any;
+
+    await stateContract.__LightweightState_init(SIGNER.address, ethers.ZeroAddress, "chain", "sourceChain");
+
+    const RegistrationVerifier = await ethers.getContractFactory("GeneratedRegistrationVerifier");
+    const registrationVerifier = await RegistrationVerifier.deploy();
+
+    const QueryMTPValidator = await ethers.getContractFactory("QueryMTPValidator");
+    validator = await QueryMTPValidator.deploy();
+
+    proxy = await Proxy.deploy(await validator.getAddress(), "0x");
+    validator = validator.attach(await proxy.getAddress()) as QueryMTPValidator;
+
+    await validator.__QueryMTPValidator_init(
+      await registrationVerifier.getAddress(),
+      await stateContract.getAddress(),
+      IDENTITES_STATES_UPDATE_TIME,
+    );
+
+    const hashersDeployment = await deployPoseidonFacade();
+    const poseidonFacade = hashersDeployment.poseidonFacade;
+    const poseidon3L = hashersDeployment.poseidonContracts[2] as PoseidonUnit3L;
+
+    const ZKPQueriesStorage = await ethers.getContractFactory("ZKPQueriesStorage", {
+      libraries: {
+        PoseidonFacade: await poseidonFacade.getAddress(),
+      },
+    });
+    zkpQueriesStorage = await ZKPQueriesStorage.deploy();
+
+    await zkpQueriesStorage.__ZKPQueriesStorage_init(await stateContract.getAddress());
+
+    const RegisterVerifier = await ethers.getContractFactory("RegisterVerifier", {
+      libraries: {
+        PoseidonUnit3L: await poseidon3L.getAddress(),
+      },
+    });
+    registerVerifier = await RegisterVerifier.deploy();
+
+    proxy = await Proxy.deploy(await registerVerifier.getAddress(), "0x");
+    registerVerifier = registerVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
+
+    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress());
+
+    ZKP_QUERY_INFO.queryValidator = await validator.getAddress();
+    await zkpQueriesStorage.setZKPQuery(ZKP_QUERY_ID, ZKP_QUERY_INFO);
 
     defaultVotingParams.candidates = [ethers.toBeHex(OWNER.address, 32)];
 
@@ -86,12 +191,16 @@ describe("Voting", () => {
         PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
       },
     });
-    voting = await Voting.deploy(await votingVerifier.getAddress(), ethers.ZeroAddress, treeHeight);
+    voting = await Voting.deploy(await votingVerifier.getAddress(), await registerVerifier.getAddress(), treeHeight);
 
     await reverter.snapshot();
   });
 
-  afterEach(reverter.revert);
+  afterEach("cleanup", async () => {
+    await reverter.revert();
+
+    localStorage.clear();
+  });
 
   describe("#access", () => {
     it("should not initialize the contract twice", async () => {
@@ -190,7 +299,7 @@ describe("Voting", () => {
     });
   });
 
-  describe("#registerForVoting", () => {
+  describe("#registerForVoting -- lightweight tests", () => {
     let commitmentStartTimestamp: number;
 
     beforeEach("setup", async () => {
@@ -226,6 +335,137 @@ describe("Voting", () => {
           false,
         ),
       ).to.be.rejectedWith("Voting: commitment already exists");
+    });
+  });
+
+  describe("#registerForVoting -- ZKP involved tests", () => {
+    let user: Identity;
+    let issuer: Identity;
+
+    let inputs: CredentialAtomicMTPOnChainV2Inputs;
+    let out: CredentialAtomicMTPOnChainV2Outputs;
+
+    let points: VerifierHelper.ProofPointsStruct;
+    let publicSignals: string[];
+
+    let statesMerkleData: ILightweightState.StatesMerkleDataStruct;
+
+    let proofParamsStruct: IRegisterVerifier.RegisterProofParamsStruct = {
+      issuingAuthority: poseidonHash("0x01"),
+      commitment: poseidonHash("0x02"),
+      documentNullifier: poseidonHash("0x03"),
+    };
+
+    let valueAtSlot2: bigint;
+
+    let transitStateParams: IBaseVerifier.TransitStateParamsStruct = {
+      newIdentitiesStatesRoot: ethers.ZeroHash,
+      gistData: {
+        root: ethers.ZeroHash,
+        createdAtTimestamp: 0,
+      },
+      proof: "0x",
+    };
+
+    let proveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
+      statesMerkleData: {
+        issuerId: 0,
+        issuerState: 0,
+        merkleProof: [],
+        createdAtTimestamp: 0,
+      },
+      inputs: [],
+      a: [0, 0],
+      b: [
+        [0, 0],
+        [0, 0],
+      ],
+      c: [0, 0],
+    };
+
+    function buildValueAtSlot2(issuingAuthority: bigint, documentNullifier: bigint): bigint {
+      return poseidon.hash([1n, issuingAuthority, documentNullifier]);
+    }
+
+    beforeEach("setup", async () => {
+      user = await new Identity(UserPK, IDOwnershipLevels, IDOwnershipLevels, IDOwnershipLevels).postBuild();
+      issuer = await new Identity(IssuerPK, IssuerLevels, IssuerLevels, IssuerLevels).postBuild();
+
+      valueAtSlot2 = buildValueAtSlot2(
+        BigInt(proofParamsStruct.issuingAuthority),
+        BigInt(proofParamsStruct.documentNullifier),
+      );
+
+      [inputs, out] = await generateRegistrationData(user, issuer, valueAtSlot2, 0n);
+
+      [points, publicSignals] = await getRegisterZKP(
+        inputs,
+        String(ethers.toBeHex(await voting.getAddress(), 32)),
+        String(proofParamsStruct.commitment),
+      );
+
+      proveIdentityParams.inputs = publicSignals;
+      proveIdentityParams.a = points.a;
+      proveIdentityParams.b = points.b;
+      proveIdentityParams.c = points.c;
+
+      statesMerkleData = {
+        issuerId: DID.idFromDID(issuer.id).bigInt(),
+        issuerState: await issuer.state(),
+        createdAtTimestamp: await time.latest(),
+        merkleProof: [],
+      };
+
+      proveIdentityParams.statesMerkleData = deepClone(statesMerkleData);
+
+      transitStateParams.newIdentitiesStatesRoot = ethers.solidityPackedKeccak256(
+        ["uint256", "uint256", "uint256"],
+        [statesMerkleData.issuerId, statesMerkleData.issuerState, statesMerkleData.createdAtTimestamp],
+      );
+      transitStateParams.gistData = {
+        root: ethers.ZeroHash,
+        createdAtTimestamp: await time.latest(),
+      };
+
+      const sigHash = await stateContract.getSignHash(
+        transitStateParams.gistData,
+        transitStateParams.newIdentitiesStatesRoot,
+      );
+
+      const signature = SIGNER.signingKey.sign(sigHash);
+
+      transitStateParams.proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
+
+      await registerVerifier.updateAllowedIssuers(
+        ZKP_QUERY_INFO.circuitQuery.schema,
+        [DID.idFromDID(issuer.id).bigInt()],
+        true,
+      );
+
+      await voting.__Voting_init({
+        ...deepClone(defaultVotingParams),
+        commitmentStart: (await time.latest()) + 60,
+      });
+
+      await time.increase((await time.latest()) + 60);
+    });
+
+    it("should register with state transition and ZKP proof", async () => {
+      await expect(
+        voting.registerForVoting(proveIdentityParams, proofParamsStruct, transitStateParams, false),
+      ).to.be.rejectedWith("QueryValidator: issuer state does not exist in the state contract");
+
+      await voting.registerForVoting(proveIdentityParams, proofParamsStruct, transitStateParams, true);
+    });
+
+    it("should register with already existing state transition and ZKP proof", async () => {
+      await stateContract.signedTransitState(
+        transitStateParams.newIdentitiesStatesRoot,
+        transitStateParams.gistData,
+        transitStateParams.proof,
+      );
+
+      await voting.registerForVoting(proveIdentityParams, proofParamsStruct, transitStateParams, false);
     });
   });
 
@@ -283,7 +523,7 @@ describe("Voting", () => {
       await voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof);
     });
 
-    it("should revert if trying to vote for non-canidate", async () => {
+    it("should revert if trying to vote for non-candidate", async () => {
       await expect(
         voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(FIRST.address, 32), zkpProof.formattedProof),
       ).to.be.revertedWith("Voting: candidate doesn't exist");
@@ -354,6 +594,34 @@ describe("Voting", () => {
       );
 
       await expect(voting.addRoot(ethers.ZeroHash)).to.be.eventually.fulfilled;
+    });
+  });
+
+  describe("#coverage", () => {
+    it("should add multiple elements to tree, and get node by key", async () => {
+      const PoseidonSMTMock = await ethers.getContractFactory("PoseidonSMTMock", {
+        libraries: {
+          PoseidonUnit1L: await (await getPoseidon(1)).getAddress(),
+          PoseidonUnit2L: await (await getPoseidon(2)).getAddress(),
+          PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
+        },
+      });
+      const poseidonSMTMock = await PoseidonSMTMock.deploy();
+
+      await poseidonSMTMock.__PoseidonSMTMock_init(treeHeight);
+
+      const element = ethers.toBeHex("1", 32);
+
+      await poseidonSMTMock.add(element);
+      await poseidonSMTMock.add(ethers.toBeHex("3", 32));
+      await poseidonSMTMock.add(ethers.toBeHex("7", 32));
+
+      const elementIndex = poseidon.hash([BigInt(element)]);
+
+      const node = await poseidonSMTMock.getNodeByKey("0x" + elementIndex.toString(16));
+
+      expect(node.key).to.equal(elementIndex);
+      expect(node.value).to.equal(element);
     });
   });
 });

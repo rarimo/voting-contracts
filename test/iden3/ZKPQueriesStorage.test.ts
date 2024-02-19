@@ -3,90 +3,24 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { Reverter } from "@test-helpers";
+import { deployPoseidonFacade, Reverter } from "@test-helpers";
 
 import { IMPLEMENTATION_SLOT } from "@scripts";
 
 import { IZKPQueriesStorage, PoseidonFacade, ZKPQueriesStorage } from "@ethers-v6";
 
-const { poseidonContract } = require("circomlibjs");
-
-export async function deployPoseidons(deployer: any, poseidonSizeParams: number[], isLog: boolean = true) {
-  poseidonSizeParams.forEach((size) => {
-    if (![1, 2, 3, 4, 5, 6].includes(size)) {
-      throw new Error(`Poseidon should be integer in a range 1..6. Poseidon size provided: ${size}`);
-    }
-  });
-
-  const deployPoseidon = async (params: number, isLog: boolean) => {
-    const abi = poseidonContract.generateABI(params);
-    const code = poseidonContract.createCode(params);
-
-    const PoseidonElements = new ethers.ContractFactory(abi, code, deployer);
-    const poseidonElements = await PoseidonElements.deploy();
-
-    if (isLog) {
-      console.log(`Poseidon${params}Elements deployed to:`, await poseidonElements.getAddress());
-    }
-
-    return poseidonElements;
-  };
-
-  const result = [];
-
-  for (const size of poseidonSizeParams) {
-    result.push(await deployPoseidon(size, isLog));
-  }
-
-  return result;
-}
-
-export async function deployPoseidonFacade() {
-  const poseidonContracts = await deployPoseidons(
-    (await ethers.getSigners())[0],
-    new Array(6).fill(6).map((_, i) => i + 1),
-    false,
-  );
-
-  const SpongePoseidonFactory = await ethers.getContractFactory("SpongePoseidon", {
-    libraries: {
-      PoseidonUnit6L: await poseidonContracts[5].getAddress(),
-    },
-  });
-
-  const spongePoseidon = await SpongePoseidonFactory.deploy();
-
-  const PoseidonFacadeFactory = await ethers.getContractFactory("PoseidonFacade", {
-    libraries: {
-      PoseidonUnit1L: await poseidonContracts[0].getAddress(),
-      PoseidonUnit2L: await poseidonContracts[1].getAddress(),
-      PoseidonUnit3L: await poseidonContracts[2].getAddress(),
-      PoseidonUnit4L: await poseidonContracts[3].getAddress(),
-      PoseidonUnit5L: await poseidonContracts[4].getAddress(),
-      PoseidonUnit6L: await poseidonContracts[5].getAddress(),
-      SpongePoseidon: await spongePoseidon.getAddress(),
-    },
-  });
-
-  const poseidonFacade = await PoseidonFacadeFactory.deploy();
-
-  return {
-    poseidonContracts,
-    spongePoseidon,
-    poseidonFacade,
-  };
-}
-
 describe("ZKPQueriesStorage", () => {
   const reverter = new Reverter();
 
-  const circuitQuery = {
+  const CIRCUIT_ID = "credentialAtomicQuerySigV2OnChain";
+
+  const circuitQuery: IZKPQueriesStorage.CircuitQueryStruct = {
     schema: 78927927240581107041951874774584917853n,
+    slotIndex: 0,
+    operator: 0,
     claimPathKey: 16153502378554866159038850585713705546745830858436223350513476757548188765156n,
-    operator: 1,
-    value: [1n, ...new Array(63).fill(0).map(() => 0n)],
-    queryHash: 0n,
-    circuitId: "credentialAtomicQuerySigV2OnChain",
+    claimPathNotExists: 0,
+    values: [1n, ...new Array(63).fill(0).map(() => 0n)],
   };
 
   const REGISTER_PROOF_QUERY_ID = "REGISTER_PROOF";
@@ -127,15 +61,6 @@ describe("ZKPQueriesStorage", () => {
 
     await zkpQueriesStorage.__ZKPQueriesStorage_init(LIGHTWEIGHT_STATE.address);
 
-    circuitQuery.queryHash = await poseidonFacade.poseidon6([
-      circuitQuery.schema,
-      0,
-      circuitQuery.operator,
-      circuitQuery.claimPathKey,
-      0,
-      await poseidonFacade.poseidonSponge(circuitQuery.value),
-    ]);
-
     await reverter.snapshot();
   });
 
@@ -173,6 +98,7 @@ describe("ZKPQueriesStorage", () => {
       const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
         queryValidator: VALIDATOR.address,
         circuitQuery,
+        circuitId: CIRCUIT_ID,
       };
 
       const tx = await zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo);
@@ -195,6 +121,7 @@ describe("ZKPQueriesStorage", () => {
       const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
         queryValidator: ethers.ZeroAddress,
         circuitQuery,
+        circuitId: CIRCUIT_ID,
       };
 
       expect(zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.revertedWith(reason);
@@ -206,6 +133,7 @@ describe("ZKPQueriesStorage", () => {
       const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
         queryValidator: ethers.ZeroAddress,
         circuitQuery,
+        circuitId: CIRCUIT_ID,
       };
 
       expect(zkpQueriesStorage.connect(FIRST).setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.revertedWith(
@@ -219,6 +147,7 @@ describe("ZKPQueriesStorage", () => {
       const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
         queryValidator: VALIDATOR.address,
         circuitQuery,
+        circuitId: CIRCUIT_ID,
       };
 
       await zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo);
@@ -235,11 +164,9 @@ describe("ZKPQueriesStorage", () => {
 
       expect(storedQueryInfo.queryValidator).to.be.eq(ethers.ZeroAddress);
       expect(storedQueryInfo.circuitQuery.schema).to.be.eq(0);
-      expect(storedQueryInfo.circuitQuery.circuitId).to.be.eq("");
+      expect(storedQueryInfo.circuitId).to.be.eq("");
       expect(storedQueryInfo.circuitQuery.claimPathKey).to.be.eq(0);
       expect(storedQueryInfo.circuitQuery.operator).to.be.eq(0);
-      expect(storedQueryInfo.circuitQuery.queryHash).to.be.eq(0);
-      expect(storedQueryInfo.circuitQuery.value).to.be.deep.eq([]);
 
       expect(tx).to.emit(zkpQueriesStorage, "ZKPQueryRemoved").withArgs(REGISTER_PROOF_QUERY_ID);
     });
@@ -263,6 +190,7 @@ describe("ZKPQueriesStorage", () => {
       const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
         queryValidator: VALIDATOR.address,
         circuitQuery,
+        circuitId: CIRCUIT_ID,
       };
 
       await zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo);
@@ -272,18 +200,29 @@ describe("ZKPQueriesStorage", () => {
       expect(await zkpQueriesStorage.getQueryValidator(REGISTER_PROOF_QUERY_ID)).to.be.eq(VALIDATOR.address);
       checkCircuitQuery(await zkpQueriesStorage.getStoredCircuitQuery(REGISTER_PROOF_QUERY_ID), circuitQuery);
 
-      expect(await zkpQueriesStorage.getStoredQueryHash(REGISTER_PROOF_QUERY_ID)).to.be.eq(circuitQuery.queryHash);
+      const expectedQueryHash = await poseidonFacade.poseidon6([
+        circuitQuery.schema,
+        0,
+        circuitQuery.operator,
+        circuitQuery.claimPathKey,
+        0,
+        await poseidonFacade.poseidonSponge(circuitQuery.values),
+      ]);
+
+      expect(await zkpQueriesStorage.getStoredQueryHash(REGISTER_PROOF_QUERY_ID)).to.be.eq(expectedQueryHash);
       expect(await zkpQueriesStorage.getStoredSchema(REGISTER_PROOF_QUERY_ID)).to.be.eq(circuitQuery.schema);
 
-      expect(await zkpQueriesStorage.getQueryHash(circuitQuery)).to.be.eq(circuitQuery.queryHash);
+      expect(await zkpQueriesStorage.getQueryHash(circuitQuery)).to.be.eq(expectedQueryHash);
       expect(
         await zkpQueriesStorage.getQueryHashRaw(
           circuitQuery.schema,
+          0,
           circuitQuery.operator,
           circuitQuery.claimPathKey,
-          circuitQuery.value,
+          0,
+          circuitQuery.values,
         ),
-      ).to.be.eq(circuitQuery.queryHash);
+      ).to.be.eq(expectedQueryHash);
     });
   });
 

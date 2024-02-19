@@ -5,10 +5,11 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 
+import { IMPLEMENTATION_SLOT } from "@scripts";
+
 import { Reverter } from "@test-helpers";
 
 import { ILightweightState, LightweightState } from "@ethers-v6";
-import { IMPLEMENTATION_SLOT } from "@scripts";
 
 enum MethodId {
   None,

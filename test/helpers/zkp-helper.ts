@@ -36,8 +36,6 @@ export async function getRegisterZKP(
   votingAddress: string,
   commitment: string,
 ): Promise<[VerifierHelper.ProofPointsStruct, string[]]> {
-  console.log(inputs);
-
   const data = await snarkjs.groth16.fullProve(
     {
       // we have no constraints for "requestID" in this circuit, it is used as a unique identifier for the request

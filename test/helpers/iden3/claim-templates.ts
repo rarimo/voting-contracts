@@ -1,8 +1,7 @@
 import { Poseidon, PublicKey } from "@iden3/js-crypto";
 
-import { Claim, SchemaHash, ClaimOptions, ElemBytes, DID } from "@iden3/js-iden3-core";
 import { Merklizer } from "@iden3/js-jsonld-merklization";
-import { TestClaimDocument } from "@/test/helpers";
+import { Claim, SchemaHash, ClaimOptions, ElemBytes, DID } from "@iden3/js-iden3-core";
 
 export function AuthClaimFromPubKey(publicKey: PublicKey): Claim {
   // NOTE: We take nonce as hash of public key to make it random
@@ -27,18 +26,32 @@ export function DefaultUserClaim(subject: DID, schemaHash: SchemaHash): Claim {
   );
 }
 
-export async function DefaultJSONUserClaim(subject: DID, schemaHash: SchemaHash): Promise<[Claim, Merklizer]> {
-  const mz = await Merklizer.merklizeJSONLD(TestClaimDocument);
+export async function DefaultJSONUserClaim(
+  subject: DID,
+  schemaHash: SchemaHash,
+  mz: Merklizer,
+  claimSalt = 0n,
+): Promise<Claim> {
+  return Claim.newClaim(
+    schemaHash,
+    ClaimOptions.withIndexId(DID.idFromDID(subject)),
+    ClaimOptions.withVersion(Number(claimSalt)),
+    ClaimOptions.withRevocationNonce(10n),
+    ClaimOptions.withIndexMerklizedRoot((await mz.root()).bigInt()),
+  );
+}
 
-  const nonce = 10;
-
-  return [
-    Claim.newClaim(
-      schemaHash,
-      ClaimOptions.withIndexId(DID.idFromDID(subject)),
-      ClaimOptions.withRevocationNonce(BigInt(nonce)),
-      ClaimOptions.withIndexMerklizedRoot((await mz.root()).bigInt()),
-    ),
-    mz,
-  ];
+export async function RegistrationUserClaim(
+  subject: DID,
+  schemaHash: SchemaHash,
+  valueHashAtSlot2: bigint,
+  claimSalt = 0n,
+): Promise<Claim> {
+  return Claim.newClaim(
+    schemaHash,
+    ClaimOptions.withIndexId(DID.idFromDID(subject)),
+    ClaimOptions.withVersion(Number(claimSalt)),
+    ClaimOptions.withRevocationNonce(10n),
+    ClaimOptions.withValueData(ElemBytes.fromInt(valueHashAtSlot2), ElemBytes.fromInt(0n)),
+  );
 }
