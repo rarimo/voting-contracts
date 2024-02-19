@@ -67,7 +67,6 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
         GistRootData calldata gistData_,
         bytes calldata proof_
     ) external override {
-        // TODO: why do we need Merkle proof here? As it is possible to bypass it.
         _checkMerkleSignature(getSignHash(gistData_, newIdentitiesStatesRoot_), proof_);
 
         require(
