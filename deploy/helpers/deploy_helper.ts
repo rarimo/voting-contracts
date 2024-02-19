@@ -10,10 +10,7 @@ import {
   LightweightState__factory,
   ZKPQueriesStorage__factory,
   RegisterVerifier__factory,
-  StateLib__factory,
-  SmtLib__factory,
-  State__factory,
-  VerifierV2__factory,
+  GeneratedRegistrationVerifier__factory,
 } from "@ethers-v6";
 
 export async function deployPoseidons(deployer: Deployer, poseidonSizeParams: number[]) {
@@ -41,7 +38,7 @@ export async function deployPoseidons(deployer: Deployer, poseidonSizeParams: nu
 
 export async function deployQueryValidator(deployer: Deployer, config: Config) {
   if (isZeroAddr(config.validatorContractInfo.validatorAddr)) {
-    const stateAddr = await (await getDeployedStateContract(deployer, config)).getAddress();
+    const stateAddr = await (await getDeployedStateContract(deployer)).getAddress();
     const identitiesStatesUpdateTime = config.validatorContractInfo.identitiesStatesUpdateTime;
 
     if (!identitiesStatesUpdateTime) {
@@ -60,11 +57,7 @@ export async function deployQueryValidator(deployer: Deployer, config: Config) {
 }
 
 export async function deployState(deployer: Deployer, config: Config) {
-  if (Boolean(config.stateContractInfo.isLightweight)) {
-    await deployLightweightState(deployer, config);
-  } else {
-    await deployStateContract(deployer, config);
-  }
+  await deployLightweightState(deployer, config);
 }
 
 export async function deployVerifier(deployer: Deployer, config: Config) {
@@ -75,12 +68,8 @@ export async function getDeployedQueryValidatorContract(deployer: Deployer) {
   return await deployer.deployed(QueryMTPValidator__factory, "QueryMTPValidator Proxy");
 }
 
-export async function getDeployedStateContract(deployer: Deployer, config: Config) {
-  if (Boolean(config.stateContractInfo.isLightweight)) {
-    return await deployer.deployed(LightweightState__factory, "LightweightState Proxy");
-  } else {
-    return await deployer.deployed(State__factory, "State Proxy");
-  }
+export async function getDeployedStateContract(deployer: Deployer) {
+  return await deployer.deployed(LightweightState__factory, "LightweightState Proxy");
 }
 
 export async function getDeployedVerifierContract(deployer: Deployer) {
@@ -96,7 +85,7 @@ async function deployMTPValidator(
   let queryMTPVerifierAddress: string | undefined = zkpVerifierAddr;
 
   if (isZeroAddr(queryMTPVerifierAddress)) {
-    queryMTPVerifierAddress = await (await deployer.deploy(RegisterVerifier__factory)).getAddress();
+    queryMTPVerifierAddress = await (await deployer.deploy(GeneratedRegistrationVerifier__factory)).getAddress();
   }
 
   const queryMTPValidatorImpl = await deployer.deploy(QueryMTPValidator__factory);
@@ -118,27 +107,6 @@ async function deployMTPValidator(
   );
 
   return await queryMTPValidator.getAddress();
-}
-
-async function deployStateContract(deployer: Deployer, config: Config) {
-  if (isZeroAddr(config.stateContractInfo.stateAddr)) {
-    const stateVerifier = await deployer.deploy(VerifierV2__factory);
-
-    await deployer.deploy(SmtLib__factory);
-    await deployer.deploy(StateLib__factory);
-
-    const stateImpl = await deployer.deploy(State__factory);
-
-    const stateProxy = await deployer.deploy(ERC1967Proxy__factory, [await stateImpl.getAddress(), "0x"], {
-      name: "State Proxy",
-    });
-
-    const stateContract = await deployer.deployed(State__factory, await stateProxy.getAddress());
-
-    await stateContract.__State_init((await stateVerifier.getAddress()) as any);
-  } else {
-    await deployer.save(State__factory, config.stateContractInfo.stateAddr!);
-  }
 }
 
 async function deployLightweightState(deployer: Deployer, config: Config) {

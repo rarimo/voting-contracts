@@ -19,7 +19,6 @@ export type ValidatorContractInfo = {
 export type StateContractInfo = {
   stateAddr?: string;
   stateInitParams?: StateInitParams;
-  isLightweight: boolean | string;
 };
 
 export type StateInitParams = {
@@ -31,21 +30,23 @@ export type StateInitParams = {
 
 export type RegisterVerifierInfo = {
   registerVerifierAddr?: string;
+  allowedIssuers?: string[];
 };
 
 export type ZKPQueryInfo = {
   queryId: string;
   validatorAddr?: string;
+  circuitId: string;
   query: ZKPQuery;
 };
 
 export type ZKPQuery = {
   schema: bigint;
+  slotIndex: bigint;
+  operator: bigint;
   claimPathKey: bigint;
-  operator: string | number;
-  value: bigint[];
-  queryHash: bigint;
-  circuitId: string;
+  claimPathNotExists: bigint;
+  values: bigint[];
 };
 
 export function parseConfig(configPath: string = "deploy/data/config.json"): Config {
@@ -100,11 +101,16 @@ function validateStateInitParams(stateInitParams: StateInitParams) {
 
 function parseQueriesArr(zkpQueries: ZKPQueryInfo[]) {
   zkpQueries.forEach((zkpQueryInfo: ZKPQueryInfo) => {
+    zkpQueryInfo.queryId = zkpQueryInfo.queryId.toString();
+    zkpQueryInfo.circuitId = zkpQueryInfo.circuitId.toString();
     zkpQueryInfo.query.schema = BigInt(zkpQueryInfo.query.schema.toString());
+    zkpQueryInfo.query.slotIndex = BigInt(zkpQueryInfo.query.slotIndex.toString());
+    zkpQueryInfo.query.operator = BigInt(zkpQueryInfo.query.operator.toString());
     zkpQueryInfo.query.claimPathKey = BigInt(zkpQueryInfo.query.claimPathKey.toString());
-    zkpQueryInfo.query.value = [
-      ...zkpQueryInfo.query.value,
-      ...new Array(64 - zkpQueryInfo.query.value.length).fill(0n).map((_i) => 0n),
+    zkpQueryInfo.query.claimPathNotExists = BigInt(zkpQueryInfo.query.claimPathNotExists.toString());
+    zkpQueryInfo.query.values = [
+      ...zkpQueryInfo.query.values,
+      ...new Array(64 - zkpQueryInfo.query.values.length).fill(0n).map((_i) => 0n),
     ];
   });
 }

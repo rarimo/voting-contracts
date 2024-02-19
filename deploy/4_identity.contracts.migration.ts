@@ -17,7 +17,7 @@ export = async (deployer: Deployer) => {
 
   const poseidonFacade = await deployer.deployed(PoseidonFacade__factory);
 
-  const stateContractInfo = ["LightweightState", await (await getDeployedStateContract(deployer, config)).getAddress()];
+  const stateContractInfo = ["LightweightState", await (await getDeployedStateContract(deployer)).getAddress()];
 
   let zkpQueriesStorage;
 
