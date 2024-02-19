@@ -13,5 +13,10 @@ export function fromWei(value: string | number | bigint, decimal: number = 18): 
 }
 
 export function deepClone<T>(obj: T): T {
+  // @ts-ignore
+  BigInt.prototype.toJSON = function () {
+    return this.toString();
+  };
+
   return JSON.parse(JSON.stringify(obj));
 }

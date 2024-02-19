@@ -11,13 +11,11 @@ import {ILightweightState} from "../ILightweightState.sol";
 interface IRegisterVerifier is IBaseVerifier {
     /**
      * @notice Struct to hold parameters for registration proof.
-     * @param isAdult Boolean indicating if the individual is an adult.
      * @param issuingAuthority The identifier for the issuing authority.
      * @param documentNullifier The unique nullifier for the document to prevent double registration.
      * @param commitment A commitment hash representing the registered identity.
      */
     struct RegisterProofParams {
-        bool isAdult;
         uint256 issuingAuthority;
         uint256 documentNullifier;
         bytes32 commitment;

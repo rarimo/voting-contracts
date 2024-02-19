@@ -23,6 +23,7 @@ export = async (deployer: Deployer) => {
 
     const queryInfo: IZKPQueriesStorage.QueryInfoStruct = {
       circuitQuery: zkpQueryInfo.query,
+      circuitId: zkpQueryInfo.circuitId,
       queryValidator: currentValidatorAddr,
     };
 

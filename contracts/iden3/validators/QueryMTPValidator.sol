@@ -3,13 +3,18 @@ pragma solidity 0.8.16;
 
 import {QueryValidator} from "./QueryValidator.sol";
 
+import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
+import {IQueryMTPValidator} from "../../interfaces/IQueryMTPValidator.sol";
+
 /**
  * @dev This contract is a copy of the QueryMTPValidator contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
  */
-contract QueryMTPValidator is QueryValidator {
+contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
     string internal constant CIRCUIT_ID = "credentialAtomicQueryMTPV2OnChain";
     uint256 internal constant USER_ID_INDEX = 1;
     uint256 internal constant CHALLENGE_INDEX = 4;
+    uint256 internal constant VOTING_ADDRESS_INDEX = 11;
+    uint256 internal constant COMMITMENT_INDEX = 12;
 
     function __QueryMTPValidator_init(
         address verifierContractAddr_,
@@ -23,16 +28,39 @@ contract QueryMTPValidator is QueryValidator {
         );
     }
 
-    function getCircuitId() external pure override returns (string memory id) {
+    function getCircuitId()
+        external
+        pure
+        override(IQueryValidator, QueryValidator)
+        returns (string memory id)
+    {
         return CIRCUIT_ID;
     }
 
-    function getUserIdIndex() external pure override returns (uint256) {
+    function getUserIdIndex()
+        external
+        pure
+        override(IQueryValidator, QueryValidator)
+        returns (uint256)
+    {
         return USER_ID_INDEX;
     }
 
-    function getChallengeInputIndex() external pure override returns (uint256 index) {
+    function getChallengeInputIndex()
+        external
+        pure
+        override(IQueryValidator, QueryValidator)
+        returns (uint256 index)
+    {
         return CHALLENGE_INDEX;
+    }
+
+    function getVotingAddressIndex() external pure override returns (uint256 index) {
+        return VOTING_ADDRESS_INDEX;
+    }
+
+    function getCommitmentIndex() external pure override returns (uint256 index) {
+        return COMMITMENT_INDEX;
     }
 
     function _getInputValidationParameters(

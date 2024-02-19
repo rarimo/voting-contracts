@@ -17,19 +17,21 @@
   "poseidonFacade": "",
   "zkpQueriesStorage": "",
   "registerVerifierInfo": {
-    "registerVerifierAddr": ""
+    "registerVerifierAddr": "",
+    "allowedIssuers": []
   },
   "zkpQueries": [
     {
       "queryId": "REGISTER_PROOF",
       "validatorAddr": "",
+      "circuitId": "credentialAtomicQueryMTPV2OnChain",
       "query": {
         "schema": "31584121850720233142680868736086212256",
-        "claimPathKey": "20466283553974326613475625419924820003272899689641632634246776256953592850744",
+        "slotIndex": 6,
         "operator": "1",
-        "value": ["1"],
-        "queryHash": "0",
-        "circuitId": "credentialAtomicQueryMTPV2OnChain"
+        "claimPathKey": 0,
+        "claimPathNotExists": 0,
+        "values": ["1"]
       }
     }
   ]

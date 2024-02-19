@@ -105,7 +105,7 @@ const config: HardhatUserConfig = {
     strict: false,
   },
   gasReporter: {
-    enabled: true,
+    enabled: false,
   },
   typechain: {
     outDir: "generated-types",

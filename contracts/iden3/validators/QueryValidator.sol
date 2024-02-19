@@ -26,7 +26,7 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
         address verifierContractAddr_,
         address stateContractAddr_,
         uint256 identitesStatesUpdateTime_
-    ) public onlyInitializing {
+    ) internal onlyInitializing {
         __Ownable_init();
 
         lightweightState = ILightweightState(stateContractAddr_);
@@ -106,19 +106,12 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
             statesMerkleData_
         );
 
-        if (!isRootExists_) {
-            require(
-                GenesisUtils.isGenesisState(
-                    statesMerkleData_.issuerId,
-                    statesMerkleData_.issuerState
-                ),
-                "QueryValidator: issuer state isn't in state contract and not genesis"
-            );
-            require(
-                statesMerkleData_.createdAtTimestamp == 0,
-                "QueryValidator: it isn't possible to have a state creation time at genesis state"
-            );
-        } else if (computedRoot_ != lightweightState.identitiesStatesRoot()) {
+        require(
+            isRootExists_,
+            "QueryValidator: issuer state does not exist in the state contract"
+        );
+
+        if (computedRoot_ != lightweightState.identitiesStatesRoot()) {
             ILightweightState.IdentitiesStatesRootData
                 memory _identitiesStatesRootData = lightweightState.getIdentitiesStatesRootData(
                     computedRoot_

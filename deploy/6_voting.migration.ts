@@ -7,6 +7,7 @@ import {
   VotingFactory__factory,
   VotingRegistry__factory,
 } from "@ethers-v6";
+
 import { getDeployedVerifierContract } from "@deploy-helper";
 
 export = async (deployer: Deployer) => {
