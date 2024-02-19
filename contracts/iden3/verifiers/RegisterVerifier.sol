@@ -4,12 +4,11 @@ pragma solidity 0.8.16;
 import {Vector} from "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
 import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
-import {ICircuitValidator} from "@iden3/contracts/interfaces/ICircuitValidator.sol";
 
 import {IRegisterVerifier} from "../../interfaces/verifiers/IRegisterVerifier.sol";
 import {IZKPQueriesStorage} from "../../interfaces/IZKPQueriesStorage.sol";
 import {ILightweightState} from "../../interfaces/ILightweightState.sol";
-import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
+import {IQueryMTPValidator} from "../../interfaces/IQueryMTPValidator.sol";
 
 import {BaseVerifier} from "./BaseVerifier.sol";
 
@@ -59,9 +58,9 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
      * @inheritdoc IRegisterVerifier
      */
     function getRegisterProofInfo(
-        uint256 identityId_
+        uint256 documentNullifier_
     ) external view returns (RegisterProofInfo memory) {
-        return _registrationProofInfo[identityId_];
+        return _registrationProofInfo[documentNullifier_];
     }
 
     /**
@@ -99,33 +98,35 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             "RegisterVerifier: ZKP Query does not exist for passed query id."
         );
 
-        IQueryValidator queryValidator_ = IQueryValidator(
+        IQueryMTPValidator queryValidator_ = IQueryMTPValidator(
             zkpQueriesStorage.getQueryValidator(queryId_)
         );
 
-        ICircuitValidator.CircuitQuery memory circuitQuery_ = zkpQueriesStorage
+        IZKPQueriesStorage.CircuitQuery memory circuitQuery_ = zkpQueriesStorage
             .getStoredCircuitQuery(queryId_);
 
-        uint256[] memory values_ = new uint256[](1);
+        uint256[] memory values_ = new uint256[](64);
         values_[0] = PoseidonUnit3L.poseidon(
             [
-                _toUint256(registerProofInfo_.registerProofParams.isAdult),
+                1, // Is Adult should be always 1
                 registerProofInfo_.registerProofParams.issuingAuthority,
                 registerProofInfo_.registerProofParams.documentNullifier
             ]
         );
 
-        circuitQuery_.value = values_;
+        circuitQuery_.values = values_;
 
         uint256 queryHash_ = zkpQueriesStorage.getQueryHash(circuitQuery_);
 
-        Vector.UintVector memory vector = Vector.newUint(proveIdentityParams_.inputs);
-        vector.push(uint256(uint160(registerProofInfo_.votingAddress)));
-        vector.push(uint256(registerProofInfo_.registerProofParams.commitment));
+        _validateRegistrationFields(
+            queryValidator_,
+            proveIdentityParams_.inputs,
+            registerProofInfo_
+        );
 
         queryValidator_.verify(
             proveIdentityParams_.statesMerkleData,
-            vector.toArray(),
+            proveIdentityParams_.inputs,
             proveIdentityParams_.a,
             proveIdentityParams_.b,
             proveIdentityParams_.c,
@@ -135,6 +136,10 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         _checkAllowedIssuer(queryId_, proveIdentityParams_.statesMerkleData.issuerId);
     }
 
+    /**
+    * @dev The voting address is one of the inputs of the ZKP; therefore, we ensure that the caller is registered for
+    * voting with the exact ID, which, by architecture, is the same as the voting address.
+    */
     function _onlyVoting(RegisterProofInfo memory registerProofInfo_) private view {
         require(
             msg.sender == registerProofInfo_.votingAddress,
@@ -142,9 +147,23 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         );
     }
 
-    function _toUint256(bool x) private pure returns (uint256 r) {
-        assembly {
-            r := x
-        }
+    function _validateRegistrationFields(
+        IQueryMTPValidator queryValidator_,
+        uint256[] memory inputs_,
+        RegisterProofInfo memory registerProofInfo_
+    ) private pure {
+        uint256 commitmentIndex_ = queryValidator_.getCommitmentIndex();
+        uint256 votingAddressIndex_ = queryValidator_.getVotingAddressIndex();
+
+        require(
+            bytes32(inputs_[commitmentIndex_]) ==
+                registerProofInfo_.registerProofParams.commitment,
+            "RegisterVerifier: commitment does not match the requested one."
+        );
+
+        require(
+            inputs_[votingAddressIndex_] == uint256(uint160(registerProofInfo_.votingAddress)),
+            "RegisterVerifier: voting address does not match the requested one."
+        );
     }
 }
