@@ -137,9 +137,9 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     }
 
     /**
-    * @dev The voting address is one of the inputs of the ZKP; therefore, we ensure that the caller is registered for
-    * voting with the exact ID, which, by architecture, is the same as the voting address.
-    */
+     * @dev The voting address is one of the inputs of the ZKP; therefore, we ensure that the caller is registered for
+     * voting with the exact ID, which, by architecture, is the same as the voting address.
+     */
     function _onlyVoting(RegisterProofInfo memory registerProofInfo_) private view {
         require(
             msg.sender == registerProofInfo_.votingAddress,
