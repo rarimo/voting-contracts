@@ -57,7 +57,7 @@ export async function generateMTPData(
     await gisTree.add(data.id, data.state);
   }
 
-  const authMTProof = await user.authMTPStrign();
+  const authMTProof = await user.authMTPProofSiblings();
   const [authNonRevMTProof, nodeAuxNonRev] = await user.claimRevMTP(user.authClaim);
 
   const sig = await user.sign(challenge);
@@ -174,17 +174,16 @@ export async function generateRegistrationData(
 
   const [issuerClaimNonRevMtp, issuerClaimNonRevAux] = await issuer.claimRevMTP(claim);
 
-  let challenge = BigInt(12345);
+  const gistTree = new Merkletree(new LocalStorageDB(str2Bytes("gist-tree")), true, OnChainLevels);
 
-  const gisTree = new Merkletree(new LocalStorageDB(str2Bytes("gist-tree")), true, OnChainLevels);
-
-  const authMTProof = await user.authMTPStrign();
+  const authMTProof = await user.authMTPProofSiblings();
   const [authNonRevMTProof, nodeAuxNonRev] = await user.claimRevMTP(user.authClaim);
 
+  let challenge = BigInt(12345);
   const sig = await user.sign(challenge);
 
-  const gistProofRaw = await gisTree.generateProof(await user.idHash());
-  const gistRoot = await gisTree.root();
+  const gistProofRaw = await gistTree.generateProof(await user.idHash());
+  const gistRoot = await gistTree.root();
 
   const [gistProof, gistNodAux] = PrepareProof(gistProofRaw.proof, OnChainLevels);
 

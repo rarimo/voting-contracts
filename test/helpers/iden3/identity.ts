@@ -76,7 +76,7 @@ export class Identity {
     return [proof.proof, proof.value];
   }
 
-  public async authMTPStrign(): Promise<bigint[]> {
+  public async authMTPProofSiblings(): Promise<bigint[]> {
     const [proof, _] = await this.claimMTPRaw(this.authClaim);
 
     const prepared = PrepareProof(proof, this.claimLevels);
