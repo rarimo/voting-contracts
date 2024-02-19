@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {ICircuitValidator} from "@iden3/contracts/interfaces/ICircuitValidator.sol";
-
 import {ILightweightState} from "./ILightweightState.sol";
 
 /**
@@ -14,14 +12,25 @@ import {ILightweightState} from "./ILightweightState.sol";
  * It provides functions to set, retrieve, and remove ZKP queries from the storage.
  */
 interface IZKPQueriesStorage {
+    struct CircuitQuery {
+        uint256 schema;
+        uint8 slotIndex;
+        uint8 operator;
+        uint256 claimPathKey;
+        uint256 claimPathNotExists;
+        uint256[] values;
+    }
+
     /**
      * @notice Contains the query information, including the circuit query and query validator
      * @param circuitQuery The circuit query
      * @param queryValidator The query validator
+     * @param circuitId The circuit ID
      */
     struct QueryInfo {
-        ICircuitValidator.CircuitQuery circuitQuery;
+        CircuitQuery circuitQuery;
         address queryValidator;
+        string circuitId;
     }
 
     /**
@@ -33,7 +42,7 @@ interface IZKPQueriesStorage {
     event ZKPQuerySet(
         string indexed queryId,
         address queryValidator,
-        ICircuitValidator.CircuitQuery newCircuitQuery
+        CircuitQuery newCircuitQuery
     );
 
     /**
@@ -84,7 +93,7 @@ interface IZKPQueriesStorage {
      */
     function getStoredCircuitQuery(
         string memory queryId_
-    ) external view returns (ICircuitValidator.CircuitQuery memory);
+    ) external view returns (CircuitQuery memory);
 
     /**
      * @notice Function to get the stored query hash for a given query ID
@@ -112,22 +121,24 @@ interface IZKPQueriesStorage {
      * @param circuitQuery_ The circuit query
      * @return The query hash
      */
-    function getQueryHash(
-        ICircuitValidator.CircuitQuery memory circuitQuery_
-    ) external view returns (uint256);
+    function getQueryHash(CircuitQuery memory circuitQuery_) external view returns (uint256);
 
     /**
      * @notice Function to get the query hash for the raw values
      * @param schema_ The schema id
+     * @param slotIndex_ The slot index
      * @param operator_ The query operator
      * @param claimPathKey_ The claim path key
+     * @param claimPathNotExists_ The claim path not exists
      * @param values_ The values array
      * @return The query hash
      */
     function getQueryHashRaw(
         uint256 schema_,
+        uint256 slotIndex_,
         uint256 operator_,
         uint256 claimPathKey_,
+        uint256 claimPathNotExists_,
         uint256[] memory values_
     ) external view returns (uint256);
 }

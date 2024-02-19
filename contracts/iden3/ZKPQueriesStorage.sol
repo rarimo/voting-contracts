@@ -46,8 +46,6 @@ contract ZKPQueriesStorage is IZKPQueriesStorage, OwnableUpgradeable, UUPSUpgrad
             "ZKPQueriesStorage: Zero queryValidator address."
         );
 
-        queryInfo_.circuitQuery.queryHash = getQueryHash(queryInfo_.circuitQuery);
-
         _queriesInfo[queryId_] = queryInfo_;
 
         _supportedQueryIds.add(queryId_);
@@ -81,12 +79,12 @@ contract ZKPQueriesStorage is IZKPQueriesStorage, OwnableUpgradeable, UUPSUpgrad
 
     function getStoredCircuitQuery(
         string memory queryId_
-    ) external view override returns (ICircuitValidator.CircuitQuery memory) {
+    ) external view override returns (CircuitQuery memory) {
         return _queriesInfo[queryId_].circuitQuery;
     }
 
     function getStoredQueryHash(string memory queryId_) external view override returns (uint256) {
-        return _queriesInfo[queryId_].circuitQuery.queryHash;
+        return getQueryHash(_queriesInfo[queryId_].circuitQuery);
     }
 
     function getStoredSchema(string memory queryId_) external view override returns (uint256) {
@@ -98,36 +96,32 @@ contract ZKPQueriesStorage is IZKPQueriesStorage, OwnableUpgradeable, UUPSUpgrad
     }
 
     function getQueryHash(
-        ICircuitValidator.CircuitQuery memory circuitQuery_
+        CircuitQuery memory circuitQuery_
     ) public pure override returns (uint256) {
         return
             getQueryHashRaw(
                 circuitQuery_.schema,
+                circuitQuery_.slotIndex,
                 circuitQuery_.operator,
                 circuitQuery_.claimPathKey,
-                circuitQuery_.value
+                circuitQuery_.claimPathNotExists,
+                circuitQuery_.values
             );
     }
 
     function getQueryHashRaw(
         uint256 schema_,
+        uint256 slotIndex_,
         uint256 operator_,
         uint256 claimPathKey_,
+        uint256 claimPathNotExists_,
         uint256[] memory values_
     ) public pure override returns (uint256) {
         uint256 valueHash_ = PoseidonFacade.poseidonSponge(values_);
 
-        // only merklized claims are supported (claimPathNotExists is false, slot index is set to 0 )
         return
             PoseidonFacade.poseidon6(
-                [
-                    schema_,
-                    0, // slot index
-                    operator_,
-                    claimPathKey_,
-                    0, // claimPathNotExists: 0 for inclusion, 1 for non-inclusion
-                    valueHash_
-                ]
+                [schema_, slotIndex_, operator_, claimPathKey_, claimPathNotExists_, valueHash_]
             );
     }
 

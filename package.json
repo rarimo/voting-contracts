@@ -21,7 +21,7 @@
     "lint-sol-fix": "prettier --write \"contracts/**/*.sol\""
   },
   "dependencies": {
-    "@iden3/contracts": "1.0.0",
+    "@iden3/contracts": "1.4.7",
     "@openzeppelin/contracts": "4.9.5",
     "@openzeppelin/contracts-upgradeable": "4.9.5",
     "@rarimo/evm-bridge-contracts": "1.0.3",
