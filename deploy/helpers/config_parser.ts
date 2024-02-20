@@ -2,12 +2,20 @@ import * as fs from "fs";
 import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 export type Config = {
+  owners: OwnerModel;
   validatorContractInfo: ValidatorContractInfo;
   stateContractInfo: StateContractInfo;
   registerVerifierInfo: RegisterVerifierInfo;
   poseidonFacade?: string;
   zkpQueriesStorage?: string;
   zkpQueries: ZKPQueryInfo[];
+};
+
+export type OwnerModel = {
+  zkpQueriesStorage: string;
+  votingRegistry: string;
+  baseVerifier: string;
+  queryValidator: string;
 };
 
 export type ValidatorContractInfo = {
@@ -69,6 +77,8 @@ export function parseConfig(configPath: string = "deploy/data/config.json"): Con
 
   parseQueriesArr(config.zkpQueries);
 
+  validateOwnerModel(config.owners);
+
   return config;
 }
 
@@ -90,6 +100,13 @@ export function isZeroAddr(filedDataRaw: string | undefined) {
 
 export function isEmptyField(filedDataRaw: string | undefined) {
   return !filedDataRaw || filedDataRaw == "";
+}
+
+function validateOwnerModel(ownerModel: OwnerModel) {
+  nonZeroAddr(ownerModel.zkpQueriesStorage, "owners.zkpQueriesStorage");
+  nonZeroAddr(ownerModel.votingRegistry, "owners.votingRegistry");
+  nonZeroAddr(ownerModel.baseVerifier, "owners.baseVerifier");
+  nonZeroAddr(ownerModel.queryValidator, "owners.queryValidator");
 }
 
 function validateStateInitParams(stateInitParams: StateInitParams) {

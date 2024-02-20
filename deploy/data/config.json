@@ -1,4 +1,10 @@
 {
+  "owners": {
+    "zkpQueriesStorage": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "votingRegistry": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "baseVerifier": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "queryValidator": "0x038D006846a3e203738cF80A02418e124203beb2"
+  },
   "validatorContractInfo": {
     "validatorAddr": "",
     "identitiesStatesUpdateTime": "3600",
