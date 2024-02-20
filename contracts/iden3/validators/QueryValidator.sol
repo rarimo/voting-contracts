@@ -94,7 +94,7 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
         );
 
         require(
-            rootData_.root == gistRoot_,
+            gistRoot_ != 0 && rootData_.root == gistRoot_,
             "QueryValidator: gist root state isn't in state contract"
         );
     }

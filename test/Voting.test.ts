@@ -423,7 +423,7 @@ describe("Voting", () => {
         [statesMerkleData.issuerId, statesMerkleData.issuerState, statesMerkleData.createdAtTimestamp],
       );
       transitStateParams.gistData = {
-        root: ethers.ZeroHash,
+        root: out.gistRoot,
         createdAtTimestamp: await time.latest(),
       };
 
@@ -453,7 +453,7 @@ describe("Voting", () => {
     it("should register with state transition and ZKP proof", async () => {
       await expect(
         voting.registerForVoting(proveIdentityParams, proofParamsStruct, transitStateParams, false),
-      ).to.be.rejectedWith("QueryValidator: issuer state does not exist in the state contract");
+      ).to.be.rejectedWith("QueryValidator: gist root state isn't in state contract");
 
       await voting.registerForVoting(proveIdentityParams, proofParamsStruct, transitStateParams, true);
     });

@@ -281,7 +281,7 @@ describe("RegisterVerifier", () => {
         [statesMerkleData.issuerId, statesMerkleData.issuerState, statesMerkleData.createdAtTimestamp],
       );
       transitStateParams.gistData = {
-        root: ethers.ZeroHash,
+        root: out.gistRoot,
         createdAtTimestamp: await time.latest(),
       };
 
@@ -364,6 +364,30 @@ describe("RegisterVerifier", () => {
     });
 
     it("should revert if trying to prove identity without transit state", async () => {
+      const newStatesMerkleData = {
+        issuerId: DID.idFromDID(issuer.id).bigInt(),
+        issuerState: ethers.id("0x01"),
+        createdAtTimestamp: await time.latest(),
+        merkleProof: [],
+      };
+
+      const packedHash = ethers.solidityPackedKeccak256(
+        ["uint256", "uint256", "uint256"],
+        [newStatesMerkleData.issuerId, newStatesMerkleData.issuerState, newStatesMerkleData.createdAtTimestamp],
+      );
+      const gistData = {
+        root: out.gistRoot,
+        createdAtTimestamp: await time.latest(),
+      };
+
+      const sigHash = await stateContract.getSignHash(gistData, packedHash);
+
+      const signature = SIGNER.signingKey.sign(sigHash);
+
+      const proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
+
+      await stateContract.signedTransitState(packedHash, gistData, proof);
+
       await expect(registerVerifier.proveRegistration(proveIdentityParams, proofParamsStruct)).to.be.revertedWith(
         "QueryValidator: issuer state does not exist in the state contract",
       );

@@ -160,7 +160,7 @@ describe("QueryMTPValidator", () => {
         [statesMerkleData.issuerId, statesMerkleData.issuerState, statesMerkleData.createdAtTimestamp],
       );
       const gistRootData = {
-        root: ethers.ZeroHash,
+        root: out.gistRoot,
         createdAtTimestamp: await time.latest(),
       };
 
