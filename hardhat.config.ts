@@ -31,6 +31,18 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
       gasMultiplier: 1.2,
     },
+    qDevnet: {
+      url: "https://rpc.qdevnet.org/",
+      accounts: privateKey(),
+    },
+    qTestnet: {
+      url: "https://rpc.qtestnet.org/",
+      accounts: privateKey(),
+    },
+    qMainnet: {
+      url: "https://rpc.q.org",
+      accounts: privateKey(),
+    },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: privateKey(),
@@ -38,7 +50,7 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: {
-    version: "0.8.20",
+    version: "0.8.16",
     settings: {
       optimizer: {
         enabled: true,
@@ -48,8 +60,37 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
+      qDevnet: "abc",
+      qTestnet: "abc",
+      qMainnet: "abc",
       sepolia: `${process.env.ETHERSCAN_KEY}`,
     },
+    customChains: [
+      {
+        network: "qDevnet",
+        chainId: 35442,
+        urls: {
+          apiURL: "https://explorer.qdevnet.org/api",
+          browserURL: "https://explorer.qdevnet.org",
+        },
+      },
+      {
+        network: "qTestnet",
+        chainId: 35443,
+        urls: {
+          apiURL: "https://explorer.qtestnet.org/api",
+          browserURL: "https://explorer.qtestnet.org",
+        },
+      },
+      {
+        network: "qMainnet",
+        chainId: 35441,
+        urls: {
+          apiURL: "https://explorer.q.org/api",
+          browserURL: "https://explorer.q.org",
+        },
+      },
+    ],
   },
   migrate: {
     pathToMigrations: "./deploy/",
@@ -69,8 +110,6 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "generated-types",
     target: "ethers-v6",
-    alwaysGenerateOverloads: true,
-    discriminateTypes: true,
   },
 };
 

@@ -1,0 +1,44 @@
+{
+  "owners": {
+    "zkpQueriesStorage": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "votingRegistry": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "baseVerifier": "0x038D006846a3e203738cF80A02418e124203beb2",
+    "queryValidator": "0x038D006846a3e203738cF80A02418e124203beb2"
+  },
+  "validatorContractInfo": {
+    "validatorAddr": "",
+    "identitiesStatesUpdateTime": "3600",
+    "zkpVerifierAddr": ""
+  },
+  "stateContractInfo": {
+    "stateAddr": "",
+    "stateInitParams": {
+      "signer": "0x038D006846a3e203738cF80A02418e124203beb2",
+      "sourceStateContract": "0x753a8678c85d5fb70A97CFaE37c84CE2fD67EDE8",
+      "sourceChainName": "Rarimo",
+      "chainName": "Q Devnet"
+    },
+    "isLightweight": true
+  },
+  "poseidonFacade": "",
+  "zkpQueriesStorage": "",
+  "registerVerifierInfo": {
+    "registerVerifierAddr": "",
+    "allowedIssuers": []
+  },
+  "zkpQueries": [
+    {
+      "queryId": "REGISTER_PROOF",
+      "validatorAddr": "",
+      "circuitId": "credentialAtomicQueryMTPV2OnChain",
+      "query": {
+        "schema": "31584121850720233142680868736086212256",
+        "slotIndex": 6,
+        "operator": "1",
+        "claimPathKey": 0,
+        "claimPathNotExists": 0,
+        "values": ["1"]
+      }
+    }
+  ]
+}

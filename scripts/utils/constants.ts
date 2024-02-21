@@ -7,3 +7,13 @@ export const SECONDS_IN_MONTH = SECONDS_IN_DAY * 30;
 export const DECIMAL = 10n ** 18n;
 export const PRECISION = 10n ** 25n;
 export const PERCENTAGE_100 = PRECISION * 100n;
+
+export enum VotingStatus {
+  NONE,
+  NOT_STARTED,
+  COMMITMENT,
+  PENDING,
+  ENDED,
+}
+
+export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
