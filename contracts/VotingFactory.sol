@@ -24,6 +24,10 @@ contract VotingFactory is IVotingFactory, Initializable, UUPSUpgradeable {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice The function to initialize the VotingFactory.
      * @param votingRegistry_ The address of the VotingRegistry contract.

@@ -6,8 +6,9 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { getPoseidon, Reverter } from "@test-helpers";
 
-import { IVoting, VotingFactory, VotingRegistry, Voting, Voting__factory } from "@ethers-v6";
 import { IMPLEMENTATION_SLOT } from "@scripts";
+
+import { IVoting, VotingFactory, VotingRegistry, Voting, Voting__factory, RegistrationMock } from "@ethers-v6";
 
 describe("VotingFactory", () => {
   const reverter = new Reverter();
@@ -20,6 +21,8 @@ describe("VotingFactory", () => {
   let votingImplementation: Voting;
   let votingFactory: VotingFactory;
   let votingRegistry: VotingRegistry;
+
+  let registration: RegistrationMock;
 
   before("setup", async () => {
     [OWNER, FIRST] = await ethers.getSigners();
@@ -41,14 +44,17 @@ describe("VotingFactory", () => {
     await votingFactory.__VotingFactory_init(await votingRegistry.getAddress());
     await votingRegistry.__VotingRegistry_init(await votingFactory.getAddress());
 
-    const Voting = await ethers.getContractFactory("Voting", {
+    const Voting = await ethers.getContractFactory("Voting");
+    votingImplementation = await Voting.deploy(ethers.ZeroAddress);
+
+    const RegistrationMock = await ethers.getContractFactory("RegistrationMock", {
       libraries: {
         PoseidonUnit1L: await (await getPoseidon(1)).getAddress(),
         PoseidonUnit2L: await (await getPoseidon(2)).getAddress(),
         PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
       },
     });
-    votingImplementation = await Voting.deploy(ethers.ZeroAddress, ethers.ZeroAddress, 80);
+    registration = await RegistrationMock.deploy(80n);
 
     await votingRegistry.setNewImplementations([VOTING_TYPE], [await votingImplementation.getAddress()]);
 
@@ -71,8 +77,8 @@ describe("VotingFactory", () => {
     before("setup", async () => {
       votingParams = {
         remark: "Voting remark",
-        commitmentStart: (await time.latest()) + 60,
-        commitmentPeriod: 60,
+        registration: await registration.getAddress(),
+        votingStart: (await time.latest()) + 60,
         votingPeriod: 60,
         candidates: [ethers.toBeHex(OWNER.address, 32)],
       };
@@ -96,8 +102,7 @@ describe("VotingFactory", () => {
       const votingInfo = await voting.votingInfo();
 
       expect(votingInfo.remark).to.equal(votingParams.remark);
-      expect(votingInfo["1"].commitmentStartTime).to.equal(votingParams.commitmentStart);
-      expect(await voting.smtTreeMaxDepth()).to.equal(80);
+      expect(votingInfo["1"].votingStartTime).to.equal(votingParams.votingStart);
     });
 
     it("should create a deterministic voting with correct parameters", async () => {
@@ -114,8 +119,7 @@ describe("VotingFactory", () => {
       const votingInfo = await voting.votingInfo();
 
       expect(votingInfo.remark).to.equal(votingParams.remark);
-      expect(votingInfo["1"].commitmentStartTime).to.equal(votingParams.commitmentStart);
-      expect(await voting.smtTreeMaxDepth()).to.equal(80);
+      expect(votingInfo["1"].votingStartTime).to.equal(votingParams.votingStart);
     });
   });
 

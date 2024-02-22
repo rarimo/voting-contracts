@@ -204,7 +204,7 @@ describe("RegisterVerifier", () => {
     let statesMerkleData: ILightweightState.StatesMerkleDataStruct;
 
     let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
-      votingAddress: ethers.ZeroAddress,
+      registrationContractAddress: ethers.ZeroAddress,
       registerProofParams: {
         issuingAuthority: poseidonHash("0x01"),
         commitment: poseidonHash("0x02"),
@@ -247,7 +247,7 @@ describe("RegisterVerifier", () => {
       user = await new Identity(UserPK, IDOwnershipLevels, IDOwnershipLevels, IDOwnershipLevels).postBuild();
       issuer = await new Identity(IssuerPK, IssuerLevels, IssuerLevels, IssuerLevels).postBuild();
 
-      proofParamsStruct.votingAddress = await OWNER.getAddress();
+      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
 
       valueAtSlot2 = buildValueAtSlot2(
         BigInt(proofParamsStruct.registerProofParams.issuingAuthority),
@@ -258,7 +258,7 @@ describe("RegisterVerifier", () => {
 
       [points, publicSignals] = await getRegisterZKP(
         inputs,
-        String(proofParamsStruct.votingAddress),
+        String(proofParamsStruct.registrationContractAddress),
         String(proofParamsStruct.registerProofParams.commitment),
       );
 
@@ -303,7 +303,7 @@ describe("RegisterVerifier", () => {
 
     it("should revert if the votingAddress is not a msg.sender", async () => {
       const wrongProofParamsStruct = deepClone(proofParamsStruct);
-      wrongProofParamsStruct.votingAddress = await FIRST.getAddress();
+      wrongProofParamsStruct.registrationContractAddress = await FIRST.getAddress();
 
       await expect(
         registerVerifier.transitStateAndProveRegistration(
@@ -328,7 +328,7 @@ describe("RegisterVerifier", () => {
       const identityInfo = await registerVerifier.getRegisterProofInfo(
         proofParamsStruct.registerProofParams.documentNullifier,
       );
-      expect(identityInfo.votingAddress).to.be.equal(proofParamsStruct.votingAddress);
+      expect(identityInfo.registrationContractAddress).to.be.equal(proofParamsStruct.registrationContractAddress);
       expect(identityInfo.registerProofParams.issuingAuthority).to.be.equal(
         proofParamsStruct.registerProofParams.issuingAuthority,
       );

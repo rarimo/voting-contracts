@@ -40,6 +40,10 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice The function to initialize the VotingRegistry.
      * @param votingFactory_ The address of the VotingFactory contract.

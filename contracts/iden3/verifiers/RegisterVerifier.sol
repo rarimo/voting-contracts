@@ -142,7 +142,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
      */
     function _onlyVoting(RegisterProofInfo memory registerProofInfo_) private view {
         require(
-            msg.sender == registerProofInfo_.votingAddress,
+            msg.sender == registerProofInfo_.registrationContractAddress,
             "RegisterVerifier: the caller is not the voting contract."
         );
     }
@@ -162,7 +162,8 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         );
 
         require(
-            inputs_[votingAddressIndex_] == uint256(uint160(registerProofInfo_.votingAddress)),
+            inputs_[votingAddressIndex_] ==
+                uint256(uint160(registerProofInfo_.registrationContractAddress)),
             "RegisterVerifier: voting address does not match the requested one."
         );
     }
