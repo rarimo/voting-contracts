@@ -51,6 +51,7 @@
     "circomlibjs": "^0.1.7",
     "dotenv": "^16.4.1",
     "hardhat": "^2.20.1",
+    "hardhat-abi-exporter": "^2.10.1",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^1.0.9",
     "husky": "^9.0.7",
