@@ -34,13 +34,13 @@ export = async (deployer: Deployer) => {
   const registration = await deployer.deploy(Registration__factory, [await registerVerifier.getAddress(), 80]);
   const voting = await deployer.deploy(Voting__factory, [await voteVerifier.getAddress()]);
 
-  await votingRegistry.setNewImplementations(["Simple Pool"], [await voting.getAddress()]);
+  await votingRegistry.setNewImplementations(["Simple Voting"], [await voting.getAddress()]);
   await votingRegistry.setNewImplementations(["Simple Registration"], [await registration.getAddress()]);
 
   Reporter.reportContracts(
     ["PoolRegistry", await votingRegistry.getAddress()],
     ["PoolFactory", await votingFactory.getAddress()],
-    ["Simple Pool", await voting.getAddress()],
+    ["Simple Voting", await voting.getAddress()],
     ["Simple Registration", await registration.getAddress()],
     ["VoteVerifier", await voteVerifier.getAddress()],
   );
