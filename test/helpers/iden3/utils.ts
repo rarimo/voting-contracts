@@ -5,6 +5,8 @@ import { poseidon, PrivateKey, PublicKey } from "@iden3/js-crypto";
 import { NodeAuxValue } from "@/test/helpers/iden3/types";
 
 import { AuthClaimFromPubKey } from "@/test/helpers/iden3/claim-templates";
+import { Identity, RegistrationDocument } from "@/test/helpers";
+import { deepClone } from "@scripts";
 
 export function NewAuthClaim(privKHex: string): [Claim, PrivateKey] {
   // extract pubKey
@@ -123,4 +125,22 @@ export function poseidonHashValue(values: bigint[]): bigint {
   }
 
   return fullHash;
+}
+
+export function setUpRegistrationDocument(
+  user: Identity,
+  issuer: Identity,
+  issuingAuthority: bigint,
+  documentNullifier: bigint,
+): string {
+  const document = deepClone(RegistrationDocument);
+
+  document.issuer = issuer.id.string();
+  document.credentialSubject.id = user.id.string();
+  document.credentialSubject.documentNullifier = documentNullifier.toString();
+  document.credentialSubject.issuingAuthority = issuingAuthority;
+  document.credentialSubject.credentialHash = poseidon.hash([1n, issuingAuthority, documentNullifier]);
+  document.credentialSubject.isAdult = true;
+
+  return JSON.stringify(document);
 }

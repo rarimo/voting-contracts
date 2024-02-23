@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 
 import { DID } from "@iden3/js-iden3-core";
 import { poseidon } from "@iden3/js-crypto";
+import { Merklizer } from "@iden3/js-jsonld-merklization";
 
 import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 
@@ -25,6 +26,7 @@ import {
   getRegisterZKP,
   Operator,
   deployPoseidonFacade,
+  setUpRegistrationDocument,
 } from "@test-helpers";
 
 import {
@@ -53,9 +55,9 @@ describe("Registration", () => {
     circuitId: "credentialAtomicQueryMTPV2OnChainRegistration",
     circuitQuery: {
       schema: "31584121850720233142680868736086212256",
-      slotIndex: 6,
+      slotIndex: 0,
       operator: Operator.EQ,
-      claimPathKey: 0n,
+      claimPathKey: 7149981159332146589513683923839673175152485888476941863507542541133469121095n,
       claimPathNotExists: 0n,
       values: ["0"],
     },
@@ -231,10 +233,8 @@ describe("Registration", () => {
     let proofParamsStruct: IRegisterVerifier.RegisterProofParamsStruct = {
       issuingAuthority: poseidonHash("0x01"),
       commitment: poseidonHash("0x02"),
-      documentNullifier: poseidonHash("0x03"),
+      documentNullifier: poseidonHash(ethers.hexlify(ethers.randomBytes(32))),
     };
-
-    let valueAtSlot2: bigint;
 
     let transitStateParams: IBaseVerifier.TransitStateParamsStruct = {
       newIdentitiesStatesRoot: ethers.ZeroHash,
@@ -261,20 +261,22 @@ describe("Registration", () => {
       c: [0, 0],
     };
 
-    function buildValueAtSlot2(issuingAuthority: bigint, documentNullifier: bigint): bigint {
-      return poseidon.hash([1n, issuingAuthority, documentNullifier]);
-    }
+    let mz: Merklizer;
 
     beforeEach("setup", async () => {
       user = await new Identity(UserPK, IDOwnershipLevels, IDOwnershipLevels, IDOwnershipLevels).postBuild();
       issuer = await new Identity(IssuerPK, IssuerLevels, IssuerLevels, IssuerLevels).postBuild();
 
-      valueAtSlot2 = buildValueAtSlot2(
-        BigInt(proofParamsStruct.issuingAuthority),
-        BigInt(proofParamsStruct.documentNullifier),
+      mz = await Merklizer.merklizeJSONLD(
+        setUpRegistrationDocument(
+          user,
+          issuer,
+          BigInt(proofParamsStruct.issuingAuthority),
+          BigInt(proofParamsStruct.documentNullifier),
+        ),
       );
 
-      [inputs, out] = await generateRegistrationData(user, issuer, valueAtSlot2, 0n);
+      [inputs, out] = await generateRegistrationData(user, issuer, mz, 0n);
 
       [points, publicSignals] = await getRegisterZKP(
         inputs,
