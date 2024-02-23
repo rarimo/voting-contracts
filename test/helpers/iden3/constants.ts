@@ -69,7 +69,7 @@ export const RegistrationDocument = {
   "@context": [
     "https://ipfs.rarimo.com/ipfs/QmYCGiCoDn9WVoSwUBA8XLhgjzbeYLWZPfoM3scdtkWpfF",
     "https://schema.iden3.io/core/jsonld/iden3proofs.jsonld",
-    "https://ipfs.io/ipfs/QmUkU8MwPBtkEyDgx7VdavLiqLNpxQTBa1HM5LFjjAo6Fp",
+    "https://ipfs.rarimo.com/ipfs/QmUkU8MwPBtkEyDgx7VdavLiqLNpxQTBa1HM5LFjjAo6Fp",
   ],
   type: ["VerifiableCredential", "VotingCredential"],
   expirationDate: "2025-02-22T00:00:00Z",
@@ -89,7 +89,7 @@ export const RegistrationDocument = {
   },
   issuer: "",
   credentialSchema: {
-    id: "https://bafybeihn5wyotlmxdw5sof2v4snoqnh2mv3ekzktg7ggpauo3it3fjtt5i.ipfs.w3s.link/VotingCredential.json",
+    id: "https://ipfs.rarimo.com/ipfs/QmZC7astRLY2UHZqopLBXyvztwjwVskbdQBbk46q1fJ5C2",
     type: "JsonSchema2023",
   },
 };
