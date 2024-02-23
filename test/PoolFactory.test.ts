@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { AddressLike } from "ethers";
 
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -8,41 +9,42 @@ import { getPoseidon, Reverter } from "@test-helpers";
 
 import { IMPLEMENTATION_SLOT } from "@scripts";
 
-import { IVoting, VotingFactory, VotingRegistry, Voting, Voting__factory, RegistrationMock } from "@ethers-v6";
+import { PoolFactory, PoolRegistry, RegistrationMock, Voting__factory } from "@ethers-v6";
+import { IVoting } from "@/generated-types/contracts/Voting";
 
-describe("VotingFactory", () => {
+describe("PoolFactory", () => {
   const reverter = new Reverter();
 
-  const VOTING_TYPE = "Voting Type 1";
+  const VOTING_TYPE = "Pool Type 1";
 
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
 
-  let votingImplementation: Voting;
-  let votingFactory: VotingFactory;
-  let votingRegistry: VotingRegistry;
+  let votingImplementation: AddressLike;
+  let votingFactory: PoolFactory;
+  let votingRegistry: PoolRegistry;
 
   let registration: RegistrationMock;
 
   before("setup", async () => {
     [OWNER, FIRST] = await ethers.getSigners();
 
-    const VotingFactory = await ethers.getContractFactory("VotingFactory");
-    votingFactory = await VotingFactory.deploy();
+    const PoolFactory = await ethers.getContractFactory("PoolFactory");
+    votingFactory = await PoolFactory.deploy();
 
-    const VotingRegistry = await ethers.getContractFactory("VotingRegistry");
-    votingRegistry = await VotingRegistry.deploy();
+    const PoolRegistry = await ethers.getContractFactory("PoolRegistry");
+    votingRegistry = await PoolRegistry.deploy();
 
     const Proxy = await ethers.getContractFactory("ERC1967Proxy");
 
     const votingFactoryProxy = await Proxy.deploy(await votingFactory.getAddress(), "0x");
     const votingRegistryProxy = await Proxy.deploy(await votingRegistry.getAddress(), "0x");
 
-    votingFactory = VotingFactory.attach(await votingFactoryProxy.getAddress()) as VotingFactory;
-    votingRegistry = VotingRegistry.attach(await votingRegistryProxy.getAddress()) as VotingRegistry;
+    votingFactory = PoolFactory.attach(await votingFactoryProxy.getAddress()) as PoolFactory;
+    votingRegistry = PoolRegistry.attach(await votingRegistryProxy.getAddress()) as PoolRegistry;
 
-    await votingFactory.__VotingFactory_init(await votingRegistry.getAddress());
-    await votingRegistry.__VotingRegistry_init(await votingFactory.getAddress());
+    await votingFactory.__PoolFactory_init(await votingRegistry.getAddress());
+    await votingRegistry.__PoolRegistry_init(await votingFactory.getAddress());
 
     const Voting = await ethers.getContractFactory("Voting");
     votingImplementation = await Voting.deploy(ethers.ZeroAddress);
@@ -65,37 +67,40 @@ describe("VotingFactory", () => {
 
   describe("#access", () => {
     it("should not initialize the contract twice", async () => {
-      await expect(votingFactory.__VotingFactory_init(await votingRegistry.getAddress())).to.be.revertedWith(
+      await expect(votingFactory.__PoolFactory_init(await votingRegistry.getAddress())).to.be.revertedWith(
         "Initializable: contract is already initialized",
       );
     });
   });
 
-  describe("#createVoting", () => {
+  describe("#createPool", () => {
     let votingParams: IVoting.VotingParamsStruct;
+    let votingParamsEncoded: string;
 
     before("setup", async () => {
       votingParams = {
-        remark: "Voting remark",
+        remark: "Pool remark",
         registration: await registration.getAddress(),
         votingStart: (await time.latest()) + 60,
         votingPeriod: 60,
         candidates: [ethers.toBeHex(OWNER.address, 32)],
       };
+
+      votingParamsEncoded = Voting__factory.createInterface().encodeFunctionData("__Voting_init", [votingParams]);
     });
 
     it("should revert if trying to create a voting with non-existing type", async () => {
-      await expect(votingFactory.createVoting("Non-existing", votingParams)).to.be.revertedWith(
-        "VotingFactory: voting type does not exist",
+      await expect(votingFactory.createPool("Non-existing", votingParamsEncoded)).to.be.revertedWith(
+        "PoolFactory: voting type does not exist",
       );
 
       await expect(
-        votingFactory.createVotingWithSalt("Non-existing type", votingParams, ethers.ZeroHash),
-      ).to.be.revertedWith("VotingFactory: voting type does not exist");
+        votingFactory.createPoolWithSalt("Non-existing type", votingParamsEncoded, ethers.ZeroHash),
+      ).to.be.revertedWith("PoolFactory: voting type does not exist");
     });
 
     it("should create a voting with correct parameters", async () => {
-      await expect(votingFactory.createVoting(VOTING_TYPE, votingParams)).to.emit(votingFactory, "VotingCreated");
+      await expect(votingFactory.createPool(VOTING_TYPE, votingParamsEncoded)).to.emit(votingFactory, "PoolCreated");
 
       const voting = Voting__factory.connect((await votingRegistry.listPoolsByType(VOTING_TYPE, 0, 1))[0], OWNER);
 
@@ -108,10 +113,10 @@ describe("VotingFactory", () => {
     it("should create a deterministic voting with correct parameters", async () => {
       const salt = ethers.hexlify(ethers.randomBytes(32));
 
-      const predictedAddress = await votingFactory.predictVotingAddress(VOTING_TYPE, OWNER.address, salt);
+      const predictedAddress = await votingFactory.predictPoolAddress(VOTING_TYPE, OWNER.address, salt);
 
-      await expect(votingFactory.createVotingWithSalt(VOTING_TYPE, votingParams, salt))
-        .to.emit(votingFactory, "VotingCreated")
+      await expect(votingFactory.createPoolWithSalt(VOTING_TYPE, votingParamsEncoded, salt))
+        .to.emit(votingFactory, "PoolCreated")
         .withArgs(VOTING_TYPE, OWNER.address, predictedAddress);
 
       const voting = Voting__factory.connect(predictedAddress, OWNER);
@@ -125,11 +130,11 @@ describe("VotingFactory", () => {
 
   describe("#upgradeImpleemntation", () => {
     it("should upgrade the implementation only by the owner", async () => {
-      const VotingFactory = await ethers.getContractFactory("VotingFactory");
-      const newImplementation = await VotingFactory.deploy();
+      const PoolFactory = await ethers.getContractFactory("PoolFactory");
+      const newImplementation = await PoolFactory.deploy();
 
       await expect(votingFactory.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.revertedWith(
-        "VotingFactory: only registry owner can upgrade",
+        "PoolFactory: only registry owner can upgrade",
       );
 
       await votingFactory.connect(OWNER).upgradeTo(await newImplementation.getAddress());

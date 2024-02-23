@@ -1,6 +1,6 @@
 import { Deployer } from "@solarity/hardhat-migrate";
 
-import { VotingRegistry__factory, ZKPQueriesStorage__factory } from "@ethers-v6";
+import { PoolRegistry__factory, ZKPQueriesStorage__factory } from "@ethers-v6";
 
 import { Config, getDeployedQueryValidatorContract, getDeployedVerifierContract, parseConfig } from "@deploy-helper";
 
@@ -9,7 +9,7 @@ export = async (deployer: Deployer) => {
 
   const baseVerifier = await getDeployedVerifierContract(deployer);
   const queryValidator = await getDeployedQueryValidatorContract(deployer);
-  const votingRegistry = await deployer.deployed(VotingRegistry__factory, "VotingRegistry Proxy");
+  const votingRegistry = await deployer.deployed(PoolRegistry__factory, "PoolRegistry Proxy");
   const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, "ZKPQueriesStorage Proxy");
 
   await baseVerifier.transferOwnership(config.owners.baseVerifier);

@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 
 import { DID } from "@iden3/js-iden3-core";
+import { Merklizer } from "@iden3/js-jsonld-merklization";
 
 import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 
@@ -37,10 +38,9 @@ import {
   ZKPQueriesStorage,
 } from "@ethers-v6";
 import { VerifierHelper } from "@/generated-types/contracts/Voting";
-import { IBaseVerifier } from "@/generated-types/contracts/mock/VotingMock";
+import { IBaseVerifier } from "@/generated-types/contracts/Registration";
 import { IZKPQueriesStorage } from "@/generated-types/contracts/iden3/ZKPQueriesStorage";
 import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
-import { Merklizer } from "@iden3/js-jsonld-merklization";
 
 describe("RegisterVerifier", () => {
   const reverter = new Reverter();

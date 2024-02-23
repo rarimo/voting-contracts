@@ -329,7 +329,7 @@ describe("Registration", () => {
         commitmentStart: commitmentStartTimestamp,
       });
 
-      await time.increase(commitmentStartTimestamp);
+      await time.increaseTo(commitmentStartTimestamp);
     });
 
     it("should revert if trying to register not during the commitment period", async () => {
