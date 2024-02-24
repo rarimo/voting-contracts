@@ -7,6 +7,7 @@ import {
   Registration__factory,
   VotingFactory__factory,
   VotingRegistry__factory,
+  RegistrationMock__factory,
 } from "@ethers-v6";
 
 import { getDeployedVerifierContract } from "@deploy-helper";
@@ -34,9 +35,11 @@ export = async (deployer: Deployer) => {
   const registration = await deployer.deploy(Registration__factory, [await registerVerifier.getAddress(), 80]);
   const voting = await deployer.deploy(Voting__factory, [await voteVerifier.getAddress()]);
 
+  const registrationMock = await deployer.deploy(RegistrationMock__factory, [80]);
+
   await votingRegistry.setNewImplementations(
-    ["Simple Voting", "Simple Registration"],
-    [await voting.getAddress(), await registration.getAddress()],
+    ["Simple Voting", "Simple Registration", "Mock Registration"],
+    [await voting.getAddress(), await registration.getAddress(), await registrationMock.getAddress()],
   );
 
   Reporter.reportContracts(
