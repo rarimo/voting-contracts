@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
 import {IVoting} from "./interfaces/IVoting.sol";
+import {IVotingPool} from "./interfaces/IVotingPool.sol";
 import {IRegistration} from "./interfaces/IRegistration.sol";
 import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
 import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
@@ -15,7 +17,7 @@ import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
  * @title Voting Contract
  * @dev Implements a voting system with registration and voting phases, utilizing zk-SNARKs for privacy and integrity, and a Merkle tree for vote tracking.
  */
-contract Voting is IVoting, Initializable {
+contract Voting is IVoting, IVotingPool, ERC165, Initializable {
     using TypeCaster for *; // TypeCaster library for type conversions.
     using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
 
@@ -130,6 +132,20 @@ contract Voting is IVoting, Initializable {
         return VotingStatus.ENDED;
     }
 
+    function getRegistrationAddress() external view returns (address) {
+        return address(registration);
+    }
+
+    /**
+     * @inheritdoc ERC165
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return
+            interfaceId == type(IVotingPool).interfaceId ||
+            interfaceId == type(IVoting).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+
     function _validateVotingParams(VotingParams calldata votingParams_) internal view {
         require(
             votingParams_.votingStart > block.timestamp,
@@ -143,9 +159,11 @@ contract Voting is IVoting, Initializable {
         require(votingParams_.candidates.length > 0, "Voting: candidates must be provided");
         require(votingParams_.candidates.length <= MAX_CANDIDATES, "Voting: too many candidates");
 
+        IRegistration.RegistrationInfo memory registrationInfo = registration
+            .getRegistrationInfo();
         require(
-            registration.getRegistrationStatus() == IRegistration.RegistrationStatus.ENDED,
-            "Voting: registration must be ended"
+            registrationInfo.values.commitmentEndTime < votingParams_.votingStart,
+            "Voting: voting start must be after registration end"
         );
     }
 }

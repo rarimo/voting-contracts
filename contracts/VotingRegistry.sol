@@ -10,25 +10,31 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 
 import {Paginator} from "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
-import {IPoolRegistry} from "./interfaces/IPoolRegistry.sol";
+import {IVotingRegistry} from "./interfaces/IVotingRegistry.sol";
 
 /**
- * @title PoolRegistry contract
+ * @title VotingRegistry contract
  */
-contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Paginator for EnumerableSet.AddressSet;
 
     address public poolFactory;
 
-    // poolType => poolPool
+    // poolType => pool
     mapping(string => EnumerableSet.AddressSet) private _poolByType;
 
-    // proposer => poolPool
+    // proposer => pool
     mapping(address => EnumerableSet.AddressSet) private _poolByAddress;
+
+    // proposer => poolType => pool
+    mapping(address => mapping(string => EnumerableSet.AddressSet)) private _poolByAddressAndType;
 
     // poolType => poolImplementation
     mapping(string => address) private _poolImplementations;
+
+    // registration => voting
+    mapping(address => address) private _registrationToVoting;
 
     modifier onlyEqualLength(string[] memory names_, address[] memory newImplementations_) {
         _requireEqualLength(names_, newImplementations_);
@@ -45,19 +51,19 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
     }
 
     /**
-     * @notice The function to initialize the PoolRegistry.
+     * @notice The function to initialize the VotingRegistry.
      * @param poolFactory_ The address of the PoolFactory contract.
      *
-     * It binds the PoolFactory contract to the PoolRegistry.
+     * It binds the PoolFactory contract to the VotingRegistry.
      */
-    function __PoolRegistry_init(address poolFactory_) external initializer {
+    function __VotingRegistry_init(address poolFactory_) external initializer {
         __Ownable_init();
 
         poolFactory = poolFactory_;
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
      */
     function setNewImplementations(
         string[] memory names_,
@@ -66,7 +72,7 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
         for (uint256 i = 0; i < names_.length; i++) {
             require(
                 Address.isContract(newImplementations_[i]),
-                "PoolRegistry: the implementation address is not a contract"
+                "VotingRegistry: the implementation address is not a contract"
             );
 
             _poolImplementations[names_[i]] = newImplementations_[i];
@@ -74,7 +80,7 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
      */
     function addProxyPool(
         string memory name_,
@@ -83,45 +89,84 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
     ) external onlyFactory {
         _poolByType[name_].add(pool_);
         _poolByAddress[proposer_].add(pool_);
+        _poolByAddressAndType[proposer_][name_].add(pool_);
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
+     */
+    function bindVotingToRegistration(
+        address voting_,
+        address registration_
+    ) external onlyFactory {
+        _registrationToVoting[registration_] = voting_;
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
      */
     function getPoolImplementation(string memory name_) external view returns (address) {
         return _poolImplementations[name_];
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
+     */
+    function getVotingForRegistration(address registration_) external view returns (address) {
+        return _registrationToVoting[registration_];
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
      */
     function isPoolExistByType(string memory name_, address pool_) external view returns (bool) {
         return _poolByType[name_].contains(pool_);
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
      */
     function isPoolExistByProposer(address proposer_, address pool_) external view returns (bool) {
         return _poolByAddress[proposer_].contains(pool_);
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
+     */
+    function isPoolExistByProposerAndType(
+        address proposer_,
+        string memory name_,
+        address pool_
+    ) external view returns (bool) {
+        return _poolByAddressAndType[proposer_][name_].contains(pool_);
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
      */
     function poolCountByType(string memory poolType_) external view returns (uint256) {
         return _poolByType[poolType_].length();
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
      */
     function poolCountByProposer(address proposer_) external view returns (uint256) {
         return _poolByAddress[proposer_].length();
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
+     */
+    function poolCountByProposerAndType(
+        address proposer_,
+        string memory poolType_
+    ) external view returns (uint256) {
+        return _poolByAddressAndType[proposer_][poolType_].length();
+    }
+
+    /**
+     * @inheritdoc IVotingRegistry
      */
     function listPoolsByType(
         string memory name_,
@@ -132,7 +177,7 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
     }
 
     /**
-     * @inheritdoc IPoolRegistry
+     * @inheritdoc IVotingRegistry
      */
     function listPoolsByProposer(
         address proposer_,
@@ -142,18 +187,30 @@ contract PoolRegistry is IPoolRegistry, Initializable, OwnableUpgradeable, UUPSU
         return _poolByAddress[proposer_].part(offset_, limit_);
     }
 
+    /**
+     * @inheritdoc IVotingRegistry
+     */
+    function listPoolsByProposerAndType(
+        address proposer_,
+        string memory name_,
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (address[] memory pools_) {
+        return _poolByAddressAndType[proposer_][name_].part(offset_, limit_);
+    }
+
     function _requireEqualLength(
         string[] memory names_,
         address[] memory newImplementations_
     ) private pure {
         require(
             names_.length == newImplementations_.length,
-            "PoolRegistry: names and implementations length mismatch"
+            "VotingRegistry: names and implementations length mismatch"
         );
     }
 
     function _requireOnlyFactory() private view {
-        require(msg.sender == poolFactory, "PoolRegistry: only factory can call this function");
+        require(msg.sender == poolFactory, "VotingRegistry: only factory can call this function");
     }
 
     function _authorizeUpgrade(address) internal view override onlyOwner {}

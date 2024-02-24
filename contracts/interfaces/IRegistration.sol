@@ -109,6 +109,12 @@ interface IRegistration {
     function isRootExists(bytes32 root) external view returns (bool);
 
     /**
+     * @notice Retrieves the registration information
+     * @return RegistrationInfo Struct containing detailed information about the registration phase
+     */
+    function getRegistrationInfo() external view returns (RegistrationInfo memory);
+
+    /**
      * @notice Retrieves the current status of the registration phase
      */
     function getRegistrationStatus() external view returns (RegistrationStatus);

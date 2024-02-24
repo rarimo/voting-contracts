@@ -34,11 +34,31 @@ contract RegistrationMock is PoseidonSMT {
         return rootsHistory[root];
     }
 
-    function getRegistrationStatus() public view returns (IRegistration.RegistrationStatus) {
+    function getRegistrationInfo() external view returns (IRegistration.RegistrationInfo memory) {
         if (isRegistrationEnded) {
-            return IRegistration.RegistrationStatus.ENDED;
+            return
+                IRegistration.RegistrationInfo({
+                    remark: "remark",
+                    values: IRegistration.RegistrationValues({
+                        commitmentStartTime: block.timestamp,
+                        commitmentEndTime: block.timestamp
+                    }),
+                    counters: IRegistration.RegistrationCounters({totalRegistrations: 0})
+                });
         }
 
-        return IRegistration.RegistrationStatus.NONE;
+        return
+            IRegistration.RegistrationInfo({
+                remark: "remark",
+                values: IRegistration.RegistrationValues({
+                    commitmentStartTime: block.timestamp * 10,
+                    commitmentEndTime: block.timestamp * 10
+                }),
+                counters: IRegistration.RegistrationCounters({totalRegistrations: 0})
+            });
+    }
+
+    function getRegistrationStatus() public pure returns (IRegistration.RegistrationStatus) {
+        return IRegistration.RegistrationStatus.ENDED;
     }
 }

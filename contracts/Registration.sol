@@ -113,6 +113,13 @@ contract Registration is IRegistration, PoseidonSMT, Initializable {
     /**
      * @inheritdoc IRegistration
      */
+    function getRegistrationInfo() external view returns (RegistrationInfo memory) {
+        return registrationInfo;
+    }
+
+    /**
+     * @inheritdoc IRegistration
+     */
     function getRegistrationStatus() public view returns (RegistrationStatus) {
         if (registrationInfo.values.commitmentStartTime == 0) {
             return RegistrationStatus.NONE;
