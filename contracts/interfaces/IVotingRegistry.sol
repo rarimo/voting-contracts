@@ -39,10 +39,15 @@ interface IVotingRegistry {
      *
      * @dev Only callable by the `VotingFactory` contract.
      *
+     * @param proposer_ The address of the proposer who created the registration contract.
      * @param voting_ The address of the voting contract.
      * @param registration_ The address of the registration contract.
      */
-    function bindVotingToRegistration(address voting_, address registration_) external;
+    function bindVotingToRegistration(
+        address proposer_,
+        address voting_,
+        address registration_
+    ) external;
 
     /**
      * @notice Retrieves the implementation address for a specific pool type.
@@ -53,11 +58,15 @@ interface IVotingRegistry {
 
     /**
      * @notice Retrieves the voting contract address for a specific registration contract.
+     * @param proposer_ The address of the proposer who created the registration contract.
      * @param registration_ The address of the registration contract.
      * @return address The address of the voting contract associated with the specified registration contract.
      * Zero address if no voting contract is associated with the registration contract.
      */
-    function getVotingForRegistration(address registration_) external view returns (address);
+    function getVotingForRegistration(
+        address proposer_,
+        address registration_
+    ) external view returns (address);
 
     /**
      * @notice Checks if a pool instance exists within a specific pool pool type.

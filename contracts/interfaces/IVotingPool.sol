@@ -7,8 +7,8 @@ pragma solidity 0.8.16;
  */
 interface IVotingPool {
     /**
-     * @notice Getter for the address of the Registration contract.
+     * @notice Getter for the addresses of the Registration contract.
      * Must be inherited by the Voting contract that should be deployed through the VotingFactory.
      */
-    function getRegistrationAddress() external view returns (address);
+    function getRegistrationAddresses() external view returns (address[] memory);
 }

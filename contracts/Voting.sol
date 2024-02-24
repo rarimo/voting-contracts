@@ -132,8 +132,8 @@ contract Voting is IVoting, ERC165, Initializable {
         return VotingStatus.ENDED;
     }
 
-    function getRegistrationAddress() external view returns (address) {
-        return address(registration);
+    function getRegistrationAddresses() external view returns (address[] memory) {
+        return address(registration).asSingletonArray();
     }
 
     /**

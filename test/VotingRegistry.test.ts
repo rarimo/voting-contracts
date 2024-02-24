@@ -56,7 +56,7 @@ describe("VotingRegistry", () => {
 
     it("should call a `bindVotingToRegistration` function only by the factory", async () => {
       await expect(
-        votingRegistry.connect(FIRST).bindVotingToRegistration(OWNER.address, FIRST.address),
+        votingRegistry.connect(FIRST).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
       ).to.be.revertedWith("VotingRegistry: only factory can call this function");
     });
   });
@@ -102,11 +102,31 @@ describe("VotingRegistry", () => {
     });
 
     it("should bind a valid voting to the registration", async () => {
-      expect(await votingRegistry.getVotingForRegistration(FIRST.address)).to.be.equal(ethers.ZeroAddress);
+      await votingRegistry.connect(FACTORY).addProxyPool("Pool Type 1", OWNER.address, FIRST.address);
 
-      await votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, FIRST.address);
+      expect(await votingRegistry.getVotingForRegistration(OWNER.address, FIRST.address)).to.be.equal(
+        ethers.ZeroAddress,
+      );
 
-      expect(await votingRegistry.getVotingForRegistration(FIRST.address)).to.be.equal(OWNER.address);
+      await votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address);
+
+      expect(await votingRegistry.getVotingForRegistration(OWNER.address, FIRST.address)).to.be.equal(OWNER.address);
+    });
+
+    it("should revert if trying to bind a voting to the registration that does not exist", async () => {
+      await expect(
+        votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
+      ).to.be.revertedWith("VotingRegistry: registration pool not found");
+    });
+
+    it("should revert if trying to bind the same address twice", async () => {
+      await votingRegistry.connect(FACTORY).addProxyPool("Pool Type 1", OWNER.address, FIRST.address);
+
+      await votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address);
+
+      await expect(
+        votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
+      ).to.be.revertedWith("VotingRegistry: registration pool already has a voting contract");
     });
   });
 

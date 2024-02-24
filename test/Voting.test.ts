@@ -109,8 +109,8 @@ describe("Voting", () => {
 
       expect(await voting.voteVerifier()).to.equal(await votingVerifier.getAddress());
 
-      const actualRegistrationAddress = await voting.getRegistrationAddress();
-      expect(actualRegistrationAddress).to.equal(votingParams.registration);
+      const actualRegistrationAddress = await voting.getRegistrationAddresses();
+      expect(actualRegistrationAddress).to.deep.equal([votingParams.registration]);
     });
 
     it("should revert if voting start is in the past", async () => {
@@ -266,8 +266,8 @@ describe("Voting", () => {
       // IVoting -- 0x3ac8e5a3
       expect(await voting.supportsInterface("0x3ac8e5a3")).to.be.true;
 
-      // IVotingPool -- 0x0e050d2d
-      expect(await voting.supportsInterface("0x0e050d2d")).to.be.true;
+      // IVotingPool -- 0xe8188f97
+      expect(await voting.supportsInterface("0xe8188f97")).to.be.true;
     });
   });
 

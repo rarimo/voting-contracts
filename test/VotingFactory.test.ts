@@ -2,12 +2,12 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { AddressLike } from "ethers";
 
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { impersonateAccount, setBalance, time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { getPoseidon, Reverter } from "@test-helpers";
 
-import { IMPLEMENTATION_SLOT } from "@scripts";
+import { IMPLEMENTATION_SLOT, wei } from "@scripts";
 
 import { VotingFactory, VotingRegistry, RegistrationMock, Voting__factory, Registration__factory } from "@ethers-v6";
 import { IVoting } from "@/generated-types/contracts/Voting";
@@ -21,6 +21,7 @@ describe("VotingFactory", () => {
 
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
+  let FACTORY: SignerWithAddress;
 
   let votingImplementation: AddressLike;
   let registrationImplementation: AddressLike;
@@ -75,6 +76,11 @@ describe("VotingFactory", () => {
       [VOTING_TYPE, REGISTRATION_TYPE],
       [await votingImplementation.getAddress(), await registrationImplementation.getAddress()],
     );
+
+    await impersonateAccount(await votingFactory.getAddress());
+
+    FACTORY = await ethers.provider.getSigner(await votingFactory.getAddress());
+    await setBalance(FACTORY.address, wei("1000"));
 
     await reverter.snapshot();
   });
@@ -137,6 +143,10 @@ describe("VotingFactory", () => {
     });
 
     it("should create a voting with correct parameters", async () => {
+      await votingRegistry
+        .connect(FACTORY)
+        .addProxyPool(REGISTRATION_TYPE, OWNER.address, await registrationMock.getAddress());
+
       await expect(votingFactory.createVoting(VOTING_TYPE, votingParamsEncoded)).to.emit(
         votingFactory,
         "InstanceCreated",
@@ -168,6 +178,10 @@ describe("VotingFactory", () => {
     });
 
     it("should create a deterministic voting with correct parameters", async () => {
+      await votingRegistry
+        .connect(FACTORY)
+        .addProxyPool(REGISTRATION_TYPE, OWNER.address, await registrationMock.getAddress());
+
       const salt = ethers.hexlify(ethers.randomBytes(32));
 
       const predictedAddress = await votingFactory.predictAddress(VOTING_TYPE, OWNER.address, salt);

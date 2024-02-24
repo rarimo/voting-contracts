@@ -21,6 +21,9 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
 
     address public poolFactory;
 
+    // pool address => poolType
+    mapping(address => string) private _typeByPool;
+
     // poolType => pool
     mapping(string => EnumerableSet.AddressSet) private _poolByType;
 
@@ -33,8 +36,8 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
     // poolType => poolImplementation
     mapping(string => address) private _poolImplementations;
 
-    // registration => voting
-    mapping(address => address) private _registrationToVoting;
+    // proposer => registration => voting
+    mapping(address => mapping(address => address)) private _registrationToVoting;
 
     modifier onlyEqualLength(string[] memory poolType_, address[] memory newImplementations_) {
         _requireEqualLength(poolType_, newImplementations_);
@@ -90,16 +93,29 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
         _poolByType[poolType_].add(pool_);
         _poolByAddress[proposer_].add(pool_);
         _poolByAddressAndType[proposer_][poolType_].add(pool_);
+
+        _typeByPool[pool_] = poolType_;
     }
 
     /**
      * @inheritdoc IVotingRegistry
      */
     function bindVotingToRegistration(
+        address proposer_,
         address voting_,
         address registration_
     ) external onlyFactory {
-        _registrationToVoting[registration_] = voting_;
+        require(
+            bytes(_typeByPool[registration_]).length > 0,
+            "VotingRegistry: registration pool not found"
+        );
+
+        require(
+            _registrationToVoting[proposer_][registration_] == address(0),
+            "VotingRegistry: registration pool already has a voting contract"
+        );
+
+        _registrationToVoting[proposer_][registration_] = voting_;
     }
 
     /**
@@ -112,8 +128,11 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
     /**
      * @inheritdoc IVotingRegistry
      */
-    function getVotingForRegistration(address registration_) external view returns (address) {
-        return _registrationToVoting[registration_];
+    function getVotingForRegistration(
+        address proposer_,
+        address registration_
+    ) external view returns (address) {
+        return _registrationToVoting[proposer_][registration_];
     }
 
     /**

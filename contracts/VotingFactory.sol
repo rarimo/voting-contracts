@@ -68,9 +68,11 @@ contract VotingFactory is IVotingFactory, Initializable, UUPSUpgradeable {
             "VotingFactory: voting pool does not support IVotingPool"
         );
 
-        address registration_ = IVotingPool(voting_).getRegistrationAddress();
+        address[] memory registrations_ = IVotingPool(voting_).getRegistrationAddresses();
 
-        votingRegistry.bindVotingToRegistration(voting_, registration_);
+        for (uint256 i = 0; i < registrations_.length; i++) {
+            votingRegistry.bindVotingToRegistration(msg.sender, voting_, registrations_[i]);
+        }
     }
 
     /**
@@ -88,9 +90,11 @@ contract VotingFactory is IVotingFactory, Initializable, UUPSUpgradeable {
             "VotingFactory: voting pool does not support IVotingPool"
         );
 
-        address registration_ = IVotingPool(voting_).getRegistrationAddress();
+        address[] memory registration_ = IVotingPool(voting_).getRegistrationAddresses();
 
-        votingRegistry.bindVotingToRegistration(voting_, registration_);
+        for (uint256 i = 0; i < registration_.length; i++) {
+            votingRegistry.bindVotingToRegistration(msg.sender, voting_, registration_[i]);
+        }
     }
 
     /**
