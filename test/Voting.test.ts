@@ -172,7 +172,7 @@ describe("Voting", () => {
         votingStart: (await time.latest()) + 60,
       };
 
-      await registration.setRegistrationStatus(false);
+      await registration.setRegistrationStatus(true);
 
       await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
         "Voting: voting start must be after registration end",

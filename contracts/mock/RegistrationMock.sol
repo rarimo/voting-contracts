@@ -9,15 +9,13 @@ import {IRegistration} from "../interfaces/IRegistration.sol";
  * @title Registration Mock Contract
  */
 contract RegistrationMock is PoseidonSMT {
-    bool public isRegistrationEnded;
+    bool public isRegistrationPending;
 
     mapping(bytes32 => bool) public commitments;
     mapping(bytes32 => bool) public rootsHistory;
 
     constructor(uint256 treeHeight_) {
         __PoseidonSMT_init(treeHeight_);
-
-        isRegistrationEnded = true;
     }
 
     function registerMock(bytes32 commitment_) external {
@@ -27,7 +25,7 @@ contract RegistrationMock is PoseidonSMT {
     }
 
     function setRegistrationStatus(bool status) external {
-        isRegistrationEnded = status;
+        isRegistrationPending = status;
     }
 
     function isRootExists(bytes32 root) external view returns (bool) {
@@ -35,13 +33,13 @@ contract RegistrationMock is PoseidonSMT {
     }
 
     function getRegistrationInfo() external view returns (IRegistration.RegistrationInfo memory) {
-        if (isRegistrationEnded) {
+        if (!isRegistrationPending) {
             return
                 IRegistration.RegistrationInfo({
                     remark: "remark",
                     values: IRegistration.RegistrationValues({
-                        commitmentStartTime: block.timestamp,
-                        commitmentEndTime: block.timestamp
+                        commitmentStartTime: 0,
+                        commitmentEndTime: 0
                     }),
                     counters: IRegistration.RegistrationCounters({totalRegistrations: 0})
                 });

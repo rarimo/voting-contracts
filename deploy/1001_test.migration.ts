@@ -18,6 +18,8 @@ export = async (deployer: Deployer) => {
 
   const registrationAddress = (await votingRegistry.listPoolsByType("Mock Registration", 0, 1))[0];
 
+  console.log(registrationAddress);
+
   let defaultVotingParams: IVoting.VotingParamsStruct = {
     remark: "Voting remark",
     registration: registrationAddress,
