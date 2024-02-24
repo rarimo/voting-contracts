@@ -15,11 +15,11 @@ interface IVotingRegistry {
      *
      * @dev Only callable by the owner. Ensures names and implementations arrays are of equal length.
      *
-     * @param names_ Array of names associated with pool types.
+     * @param poolTypes_ Array of names associated with pool types.
      * @param newImplementations_ Array of addresses for the new implementations of the corresponding pool types.
      */
     function setNewImplementations(
-        string[] memory names_,
+        string[] memory poolTypes_,
         address[] memory newImplementations_
     ) external;
 
@@ -28,11 +28,11 @@ interface IVotingRegistry {
      *
      * @dev Only callable by the `VotingFactory` contract.
      *
-     * @param name_ The name associated with the pool type.
+     * @param poolType_ The name associated with the pool type.
      * @param proposer_ The address of the proposer creating the pool instance.
      * @param pool_ The proxy address of the new pool pool instance.
      */
-    function addProxyPool(string memory name_, address proposer_, address pool_) external;
+    function addProxyPool(string memory poolType_, address proposer_, address pool_) external;
 
     /**
      * @notice Binds a voting contract to a registration contract.
@@ -46,10 +46,10 @@ interface IVotingRegistry {
 
     /**
      * @notice Retrieves the implementation address for a specific pool type.
-     * @param name_ The name of the pool type.
+     * @param poolType_ The name of the pool type.
      * @return address The address of the implementation used for deploying future pool contracts of this type.
      */
-    function getPoolImplementation(string memory name_) external view returns (address);
+    function getPoolImplementation(string memory poolType_) external view returns (address);
 
     /**
      * @notice Retrieves the voting contract address for a specific registration contract.
@@ -61,11 +61,14 @@ interface IVotingRegistry {
 
     /**
      * @notice Checks if a pool instance exists within a specific pool pool type.
-     * @param name_ The name associated with the pool pool type.
+     * @param poolType_ The name associated with the pool pool type.
      * @param pool_ The address of the pool instance to check.
      * @return bool True if the pool instance exists within the specified pool pool type, false otherwise.
      */
-    function isPoolExistByType(string memory name_, address pool_) external view returns (bool);
+    function isPoolExistByType(
+        string memory poolType_,
+        address pool_
+    ) external view returns (bool);
 
     /**
      * @notice Checks if a pool instance exists within the pools created by a specific proposer.
@@ -78,13 +81,13 @@ interface IVotingRegistry {
     /**
      * @notice Checks if a pool instance exists within the pools created by a specific proposer and pool type.
      * @param proposer_ The address of the proposer to check against.
-     * @param name_ The name associated with the pool pool type.
+     * @param poolType_ The name associated with the pool pool type.
      * @param pool_ The address of the pool instance to check.
      * @return bool True if the pool instance exists within the pools created by the specified proposer and pool type, false otherwise.
      */
     function isPoolExistByProposerAndType(
         address proposer_,
-        string memory name_,
+        string memory poolType_,
         address pool_
     ) external view returns (bool);
 
@@ -116,13 +119,13 @@ interface IVotingRegistry {
     /**
      * @notice Lists pool pools by their type in a paginated manner.
      * @dev Utilize `poolCountByType` with the same `name_` parameter for pagination management.
-     * @param name_ The name associated with the pool pool type.
+     * @param poolType_ The name associated with the pool pool type.
      * @param offset_ The starting index for pagination.
      * @param limit_ The maximum number of pool addresses to return.
      * @return pools_ Array of proxy addresses for the pool pools of the specified type.
      */
     function listPoolsByType(
-        string memory name_,
+        string memory poolType_,
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_);
@@ -145,14 +148,14 @@ interface IVotingRegistry {
      * @notice Lists pool pools created by a specific proposer and pool type in a paginated manner.
      * @dev Utilize `poolCountByProposerAndType` with the same `proposer_` and `name_` parameters for pagination management.
      * @param proposer_ The address of the proposer.
-     * @param name_ The name associated with the pool pool type.
+     * @param poolType_ The name associated with the pool pool type.
      * @param offset_ The starting index for pagination.
      * @param limit_ The maximum number of pool addresses to return.
      * @return pools_ Array of proxy addresses for the pool pools created by the specified proposer and pool type.
      */
     function listPoolsByProposerAndType(
         address proposer_,
-        string memory name_,
+        string memory poolType_,
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_);

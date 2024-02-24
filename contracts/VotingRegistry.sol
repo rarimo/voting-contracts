@@ -36,8 +36,8 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
     // registration => voting
     mapping(address => address) private _registrationToVoting;
 
-    modifier onlyEqualLength(string[] memory names_, address[] memory newImplementations_) {
-        _requireEqualLength(names_, newImplementations_);
+    modifier onlyEqualLength(string[] memory poolType_, address[] memory newImplementations_) {
+        _requireEqualLength(poolType_, newImplementations_);
         _;
     }
 
@@ -66,16 +66,16 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
      * @inheritdoc IVotingRegistry
      */
     function setNewImplementations(
-        string[] memory names_,
+        string[] memory poolTypes_,
         address[] memory newImplementations_
-    ) external onlyOwner onlyEqualLength(names_, newImplementations_) {
-        for (uint256 i = 0; i < names_.length; i++) {
+    ) external onlyOwner onlyEqualLength(poolTypes_, newImplementations_) {
+        for (uint256 i = 0; i < poolTypes_.length; i++) {
             require(
                 Address.isContract(newImplementations_[i]),
                 "VotingRegistry: the implementation address is not a contract"
             );
 
-            _poolImplementations[names_[i]] = newImplementations_[i];
+            _poolImplementations[poolTypes_[i]] = newImplementations_[i];
         }
     }
 
@@ -83,13 +83,13 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
      * @inheritdoc IVotingRegistry
      */
     function addProxyPool(
-        string memory name_,
+        string memory poolType_,
         address proposer_,
         address pool_
     ) external onlyFactory {
-        _poolByType[name_].add(pool_);
+        _poolByType[poolType_].add(pool_);
         _poolByAddress[proposer_].add(pool_);
-        _poolByAddressAndType[proposer_][name_].add(pool_);
+        _poolByAddressAndType[proposer_][poolType_].add(pool_);
     }
 
     /**
@@ -105,8 +105,8 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
     /**
      * @inheritdoc IVotingRegistry
      */
-    function getPoolImplementation(string memory name_) external view returns (address) {
-        return _poolImplementations[name_];
+    function getPoolImplementation(string memory poolType_) external view returns (address) {
+        return _poolImplementations[poolType_];
     }
 
     /**
@@ -119,8 +119,11 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
     /**
      * @inheritdoc IVotingRegistry
      */
-    function isPoolExistByType(string memory name_, address pool_) external view returns (bool) {
-        return _poolByType[name_].contains(pool_);
+    function isPoolExistByType(
+        string memory poolType_,
+        address pool_
+    ) external view returns (bool) {
+        return _poolByType[poolType_].contains(pool_);
     }
 
     /**
@@ -135,10 +138,10 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
      */
     function isPoolExistByProposerAndType(
         address proposer_,
-        string memory name_,
+        string memory poolType_,
         address pool_
     ) external view returns (bool) {
-        return _poolByAddressAndType[proposer_][name_].contains(pool_);
+        return _poolByAddressAndType[proposer_][poolType_].contains(pool_);
     }
 
     /**
@@ -169,11 +172,11 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
      * @inheritdoc IVotingRegistry
      */
     function listPoolsByType(
-        string memory name_,
+        string memory poolType_,
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_) {
-        return _poolByType[name_].part(offset_, limit_);
+        return _poolByType[poolType_].part(offset_, limit_);
     }
 
     /**
@@ -192,11 +195,11 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
      */
     function listPoolsByProposerAndType(
         address proposer_,
-        string memory name_,
+        string memory poolType_,
         uint256 offset_,
         uint256 limit_
     ) external view returns (address[] memory pools_) {
-        return _poolByAddressAndType[proposer_][name_].part(offset_, limit_);
+        return _poolByAddressAndType[proposer_][poolType_].part(offset_, limit_);
     }
 
     function _requireEqualLength(

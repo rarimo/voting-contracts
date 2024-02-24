@@ -17,7 +17,7 @@ import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
  * @title Voting Contract
  * @dev Implements a voting system with registration and voting phases, utilizing zk-SNARKs for privacy and integrity, and a Merkle tree for vote tracking.
  */
-contract Voting is IVoting, IVotingPool, ERC165, Initializable {
+contract Voting is IVoting, ERC165, Initializable {
     using TypeCaster for *; // TypeCaster library for type conversions.
     using VerifierHelper for address; // VerifierHelper library for zk-SNARK proof verification.
 

@@ -3,13 +3,14 @@ pragma solidity 0.8.16;
 
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
+import {IVotingPool} from "./IVotingPool.sol";
 import {IRegistration} from "./IRegistration.sol";
 
 /**
  * @title IVoting Interface
  * @dev Interface for the voting process, detailing the setup, registration for voting, casting votes, and querying voting status.
  */
-interface IVoting {
+interface IVoting is IVotingPool {
     /**
      * @notice Enumeration for voting status
      */
