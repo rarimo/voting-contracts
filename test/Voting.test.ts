@@ -108,6 +108,9 @@ describe("Voting", () => {
       expect(actualVotingParams["1"].candidates).to.deep.equal(votingParams.candidates);
 
       expect(await voting.voteVerifier()).to.equal(await votingVerifier.getAddress());
+
+      const actualRegistrationAddress = await voting.getRegistrationAddress();
+      expect(actualRegistrationAddress).to.equal(votingParams.registration);
     });
 
     it("should revert if voting start is in the past", async () => {
@@ -171,7 +174,9 @@ describe("Voting", () => {
 
       await registration.setRegistrationStatus(false);
 
-      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith("Voting: registration must be ended");
+      await expect(voting.__Voting_init(votingParams)).to.be.revertedWith(
+        "Voting: voting start must be after registration end",
+      );
     });
   });
 
@@ -253,6 +258,16 @@ describe("Voting", () => {
       await expect(
         voting.vote(root, zkpProof.nullifierHash, ethers.toBeHex(OWNER.address, 32), zkpProof.formattedProof),
       ).to.be.revertedWith("Voting: nullifier already used");
+    });
+  });
+
+  describe("#getters", () => {
+    it("should support interfaces: IVoting, IVotingPool", async () => {
+      // IVoting -- 0x3ac8e5a3
+      expect(await voting.supportsInterface("0x3ac8e5a3")).to.be.true;
+
+      // IVotingPool -- 0x0e050d2d
+      expect(await voting.supportsInterface("0x0e050d2d")).to.be.true;
     });
   });
 

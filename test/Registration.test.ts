@@ -181,7 +181,7 @@ describe("Registration", () => {
 
       await registration.__Registration_init(registrationParams);
 
-      const actualRegistrationParams = await registration.registrationInfo();
+      const actualRegistrationParams = await registration.getRegistrationInfo();
       expect(actualRegistrationParams.remark).to.equal(registrationParams.remark);
       expect(actualRegistrationParams["1"].commitmentStartTime).to.equal(registrationParams.commitmentStart);
       expect(actualRegistrationParams["1"].commitmentEndTime).to.equal(
