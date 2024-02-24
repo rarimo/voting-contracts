@@ -40,6 +40,7 @@
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.4",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+    "@solarity/hardhat-habits": "^1.0.0",
     "@solarity/hardhat-markup": "^1.0.5",
     "@solarity/hardhat-migrate": "^2.1.1",
     "@typechain/ethers-v6": "^0.5.1",
