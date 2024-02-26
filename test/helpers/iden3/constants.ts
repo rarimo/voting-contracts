@@ -63,3 +63,33 @@ export const TestClaimDocument = `{
      "birthDate": "1958-07-17"
    }
  }`;
+
+export const RegistrationDocument = {
+  id: "https://issuer.polygon.robotornot.mainnet-beta.rarimo.com/v1/credentials/4940ae5d-d198-11ee-b1f8-220bd8de42d4",
+  "@context": [
+    "https://ipfs.rarimo.com/ipfs/QmYCGiCoDn9WVoSwUBA8XLhgjzbeYLWZPfoM3scdtkWpfF",
+    "https://schema.iden3.io/core/jsonld/iden3proofs.jsonld",
+    "https://ipfs.rarimo.com/ipfs/QmUkU8MwPBtkEyDgx7VdavLiqLNpxQTBa1HM5LFjjAo6Fp",
+  ],
+  type: ["VerifiableCredential", "VotingCredential"],
+  expirationDate: "2025-02-22T00:00:00Z",
+  issuanceDate: "2024-02-22T15:37:28.927787569Z",
+  credentialSubject: {
+    credentialHash: 0n,
+    documentNullifier: "",
+    id: "",
+    isAdult: false,
+    issuingAuthority: 0n,
+    type: "VotingCredential",
+  },
+  credentialStatus: {
+    id: "https://issuer.polygon.robotornot.mainnet-beta.rarimo.com/v1/credentials/revocation/status/2796425752",
+    revocationNonce: 2796425752,
+    type: "SparseMerkleTreeProof",
+  },
+  issuer: "",
+  credentialSchema: {
+    id: "https://ipfs.rarimo.com/ipfs/QmZC7astRLY2UHZqopLBXyvztwjwVskbdQBbk46q1fJ5C2",
+    type: "JsonSchema2023",
+  },
+};

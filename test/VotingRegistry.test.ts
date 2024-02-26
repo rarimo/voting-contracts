@@ -24,9 +24,9 @@ describe("VotingRegistry", () => {
     votingRegistry = await VotingRegistry.deploy();
 
     const Proxy = await ethers.getContractFactory("ERC1967Proxy");
-    const votingRegistryProxy = await Proxy.deploy(await votingRegistry.getAddress(), "0x");
+    const poolRegistryProxy = await Proxy.deploy(await votingRegistry.getAddress(), "0x");
 
-    votingRegistry = VotingRegistry.attach(await votingRegistryProxy.getAddress()) as VotingRegistry;
+    votingRegistry = VotingRegistry.attach(await poolRegistryProxy.getAddress()) as VotingRegistry;
 
     await votingRegistry.__VotingRegistry_init(FACTORY.address);
 
@@ -53,40 +53,80 @@ describe("VotingRegistry", () => {
         "VotingRegistry: only factory can call this function",
       );
     });
+
+    it("should call a `bindVotingToRegistration` function only by the factory", async () => {
+      await expect(
+        votingRegistry.connect(FIRST).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
+      ).to.be.revertedWith("VotingRegistry: only factory can call this function");
+    });
   });
 
   describe("#setNewImplementations", () => {
     it("should set valid contract as a new implementation", async () => {
       await expect(
-        votingRegistry.connect(OWNER).setNewImplementations(["Voting Type 1"], [ethers.ZeroAddress]),
+        votingRegistry.connect(OWNER).setNewImplementations(["Pool Type 1"], [ethers.ZeroAddress]),
       ).to.be.rejectedWith("VotingRegistry: the implementation address is not a contract");
 
-      const Voting = await ethers.getContractFactory("VotingFactory");
-      const voting = await Voting.deploy();
+      const Pool = await ethers.getContractFactory("VotingFactory");
+      const pool = await Pool.deploy();
 
-      await votingRegistry.connect(OWNER).setNewImplementations(["Voting Type 1"], [await voting.getAddress()]);
+      await votingRegistry.connect(OWNER).setNewImplementations(["Pool Type 1"], [await pool.getAddress()]);
 
-      expect(await votingRegistry.getVotingImplementation("Voting Type 1")).to.be.equal(await voting.getAddress());
+      expect(await votingRegistry.getPoolImplementation("Pool Type 1")).to.be.equal(await pool.getAddress());
     });
 
     it("should revert if names and addresses arrays have different lengths", async () => {
-      await expect(votingRegistry.connect(OWNER).setNewImplementations(["Voting Type 1"], [])).to.be.revertedWith(
+      await expect(votingRegistry.connect(OWNER).setNewImplementations(["Pool Type 1"], [])).to.be.revertedWith(
         "VotingRegistry: names and implementations length mismatch",
       );
     });
   });
 
-  describe("#addProxyPool", () => {
+  describe("#addProxyPool/bindVotingToRegistration", () => {
     it("should add a valid pool", async () => {
-      await votingRegistry.connect(FACTORY).addProxyPool("Voting Type 1", OWNER.address, FIRST.address);
+      await votingRegistry.connect(FACTORY).addProxyPool("Pool Type 1", OWNER.address, FIRST.address);
 
-      expect(await votingRegistry.isVotingExistByType("Voting Type 1", FIRST.address)).to.be.true;
-      expect(await votingRegistry.votingCountWithinPoolByType("Voting Type 1")).to.be.equal(1);
-      expect(await votingRegistry.listPoolsByType("Voting Type 1", 0, 1)).to.be.deep.equal([FIRST.address]);
+      expect(await votingRegistry.isPoolExistByType("Pool Type 1", FIRST.address)).to.be.true;
+      expect(await votingRegistry.poolCountByType("Pool Type 1")).to.be.equal(1);
+      expect(await votingRegistry.listPoolsByType("Pool Type 1", 0, 1)).to.be.deep.equal([FIRST.address]);
 
-      expect(await votingRegistry.isVotingExistByProposer(OWNER.address, FIRST.address)).to.be.true;
-      expect(await votingRegistry.votingCountWithinPoolByProposer(OWNER.address)).to.be.equal(1);
+      expect(await votingRegistry.isPoolExistByProposer(OWNER.address, FIRST.address)).to.be.true;
+      expect(await votingRegistry.poolCountByProposer(OWNER.address)).to.be.equal(1);
       expect(await votingRegistry.listPoolsByProposer(OWNER.address, 0, 1)).to.be.deep.equal([FIRST.address]);
+
+      expect(await votingRegistry.isPoolExistByProposerAndType(OWNER.address, "Pool Type 1", FIRST.address)).to.be.true;
+      expect(await votingRegistry.poolCountByProposerAndType(OWNER.address, "Pool Type 1")).to.be.equal(1);
+      expect(await votingRegistry.listPoolsByProposerAndType(OWNER.address, "Pool Type 1", 0, 1)).to.be.deep.equal([
+        FIRST.address,
+      ]);
+    });
+
+    it("should bind a valid voting to the registration", async () => {
+      await votingRegistry.connect(FACTORY).addProxyPool("Pool Type 1", OWNER.address, FIRST.address);
+
+      expect(await votingRegistry.getVotingForRegistration(OWNER.address, FIRST.address)).to.be.equal(
+        ethers.ZeroAddress,
+      );
+
+      await votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address);
+
+      expect(await votingRegistry.getVotingForRegistration(OWNER.address, FIRST.address)).to.be.equal(OWNER.address);
+    });
+
+    it("should revert if trying to bind a voting to the registration that does not exist", async () => {
+      await expect(
+        votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
+      ).to.be.revertedWith("VotingRegistry: registration pool not found");
+    });
+
+    it("should revert if trying to bind the same address twice", async () => {
+      await votingRegistry.connect(FACTORY).addProxyPool("Pool Type 1", OWNER.address, FIRST.address);
+
+      await votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address);
+
+      await expect(
+        votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
+      ).to.be.revertedWith("VotingRegistry: registration pool already has a voting contract");
     });
   });
 

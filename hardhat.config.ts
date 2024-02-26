@@ -8,6 +8,7 @@ import "@solarity/hardhat-markup";
 
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
+import "hardhat-abi-exporter";
 
 import "solidity-coverage";
 
@@ -110,6 +111,9 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "generated-types",
     target: "ethers-v6",
+  },
+  abiExporter: {
+    flat: true,
   },
 };
 

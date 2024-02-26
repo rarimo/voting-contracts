@@ -44,7 +44,7 @@ export async function DefaultJSONUserClaim(
 export async function RegistrationUserClaim(
   subject: DID,
   schemaHash: SchemaHash,
-  valueHashAtSlot2: bigint,
+  mz: Merklizer,
   claimSalt = 0n,
 ): Promise<Claim> {
   return Claim.newClaim(
@@ -52,6 +52,6 @@ export async function RegistrationUserClaim(
     ClaimOptions.withIndexId(DID.idFromDID(subject)),
     ClaimOptions.withVersion(Number(claimSalt)),
     ClaimOptions.withRevocationNonce(10n),
-    ClaimOptions.withValueData(ElemBytes.fromInt(valueHashAtSlot2), ElemBytes.fromInt(0n)),
+    ClaimOptions.withIndexMerklizedRoot((await mz.root()).bigInt()),
   );
 }

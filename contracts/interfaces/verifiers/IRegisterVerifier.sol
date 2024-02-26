@@ -24,11 +24,11 @@ interface IRegisterVerifier is IBaseVerifier {
     /**
      * @notice Struct to encapsulate registration proof parameters along with the voting address.
      * @param registerProofParams The registration proof parameters.
-     * @param votingAddress The address associated with the voting rights of the registered identity.
+     * @param registrationContractAddress The address of the registration contract.
      */
     struct RegisterProofInfo {
         RegisterProofParams registerProofParams;
-        address votingAddress;
+        address registrationContractAddress;
     }
 
     /**

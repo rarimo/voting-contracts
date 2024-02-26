@@ -2,7 +2,6 @@ import { DID, SchemaHash } from "@iden3/js-iden3-core";
 import { Merklizer, Path } from "@iden3/js-jsonld-merklization";
 import { LocalStorageDB, Merkletree, str2Bytes } from "@iden3/js-merkletree";
 
-import { Identity } from "@/test/helpers/iden3/identity";
 import {
   timestamp,
   requestID,
@@ -18,6 +17,8 @@ import {
   RegistrationUserClaim,
   ValueArraySize,
 } from "@/test/helpers";
+
+import { Identity } from "@/test/helpers/iden3/identity";
 
 export async function generateMTPData(
   user: Identity,
@@ -165,12 +166,24 @@ export async function generateMTPData(
 export async function generateRegistrationData(
   user: Identity,
   issuer: Identity,
-  valueHashAtSlot2: bigint,
+  mz: Merklizer,
   claimSalt = 0n,
 ): Promise<[CredentialAtomicMTPOnChainV2Inputs, CredentialAtomicMTPOnChainV2Outputs]> {
   const schemaHash = SchemaHash.newSchemaHashFromInt(31584121850720233142680868736086212256n);
 
-  const claim = await RegistrationUserClaim(user.id, schemaHash, valueHashAtSlot2, claimSalt);
+  const claim = await RegistrationUserClaim(user.id, schemaHash, mz, claimSalt);
+
+  const path = Path.newPath((await mz.resolveDocPath("credentialSubject.credentialHash")).parts);
+
+  const jsonP = await mz.proof(path);
+
+  const value = jsonP.value!;
+
+  const valueKey = await value.mtEntry();
+
+  const [claimJSONLDProof, claimJSONLDProofAux] = PrepareProof(jsonP.proof, ClaimLevels);
+
+  const pathKey = await path.mtEntry();
 
   await issuer.addClaim(claim);
 
@@ -244,17 +257,17 @@ export async function generateRegistrationData(
     // Query
     // JSON path
     claimPathNotExists: 0n, // 0 for inclusion, 1 for non-inclusion
-    claimPathMtp: prepareValue([], ClaimLevels),
-    claimPathMtpNoAux: 0n, // 1 if aux node is empty, 0 if non-empty or for inclusion proofs
-    claimPathMtpAuxHi: 0n, // 0 for inclusion proof
-    claimPathMtpAuxHv: 0n, // 0 for inclusion proof
-    claimPathKey: 0n, // hash of path in merklized json-ld document
-    claimPathValue: 0n, // value in this path in merklized json-ld document
+    claimPathMtp: claimJSONLDProof,
+    claimPathMtpNoAux: claimJSONLDProofAux.noAux, // 1 if aux node is empty, 0 if non-empty or for inclusion proofs
+    claimPathMtpAuxHi: claimJSONLDProofAux.key, // 0 for inclusion proof
+    claimPathMtpAuxHv: claimJSONLDProofAux.value, // 0 for inclusion proof
+    claimPathKey: pathKey, // hash of path in merklized json-ld document
+    claimPathValue: valueKey, // value in this path in merklized json-ld document
 
     operator: Operator.EQ,
-    slotIndex: 6,
+    slotIndex: 0,
     timestamp: timestamp,
-    value: prepareValue([valueHashAtSlot2], ValueArraySize),
+    value: prepareValue([valueKey], ValueArraySize),
   };
 
   const valuesHash = poseidonHashValue(inputs.value);
@@ -263,8 +276,8 @@ export async function generateRegistrationData(
     claimSchemaInt,
     BigInt(inputs.slotIndex),
     BigInt(inputs.operator),
-    0n, // claimPathKey
-    0n, // claimPathNotExists
+    pathKey,
+    0n,
     valuesHash,
   ]);
 

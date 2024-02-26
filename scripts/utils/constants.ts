@@ -8,10 +8,16 @@ export const DECIMAL = 10n ** 18n;
 export const PRECISION = 10n ** 25n;
 export const PERCENTAGE_100 = PRECISION * 100n;
 
-export enum VotingStatus {
+export enum RegistrationStatus {
   NONE,
   NOT_STARTED,
   COMMITMENT,
+  ENDED,
+}
+
+export enum VotingStatus {
+  NONE,
+  NOT_STARTED,
   PENDING,
   ENDED,
 }

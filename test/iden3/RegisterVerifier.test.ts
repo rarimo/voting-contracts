@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { poseidon } from "@iden3/js-crypto";
 import { DID } from "@iden3/js-iden3-core";
+import { Merklizer } from "@iden3/js-jsonld-merklization";
 
 import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 
@@ -25,6 +25,7 @@ import {
   generateRegistrationData,
   CredentialAtomicMTPOnChainV2Outputs,
   CredentialAtomicMTPOnChainV2Inputs,
+  setUpRegistrationDocument,
 } from "@test-helpers";
 
 import {
@@ -37,7 +38,7 @@ import {
   ZKPQueriesStorage,
 } from "@ethers-v6";
 import { VerifierHelper } from "@/generated-types/contracts/Voting";
-import { IBaseVerifier } from "@/generated-types/contracts/mock/VotingMock";
+import { IBaseVerifier } from "@/generated-types/contracts/Registration";
 import { IZKPQueriesStorage } from "@/generated-types/contracts/iden3/ZKPQueriesStorage";
 import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
 
@@ -53,9 +54,9 @@ describe("RegisterVerifier", () => {
     circuitId: "credentialAtomicQueryMTPV2OnChainVoting",
     circuitQuery: {
       schema: "31584121850720233142680868736086212256",
-      slotIndex: 6,
+      slotIndex: 0,
       operator: Operator.EQ,
-      claimPathKey: 0n,
+      claimPathKey: 7149981159332146589513683923839673175152485888476941863507542541133469121095n,
       claimPathNotExists: 0n,
       values: ["0"],
     },
@@ -204,15 +205,13 @@ describe("RegisterVerifier", () => {
     let statesMerkleData: ILightweightState.StatesMerkleDataStruct;
 
     let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
-      votingAddress: ethers.ZeroAddress,
+      registrationContractAddress: ethers.ZeroAddress,
       registerProofParams: {
         issuingAuthority: poseidonHash("0x01"),
         commitment: poseidonHash("0x02"),
         documentNullifier: poseidonHash("0x03"),
       },
     };
-
-    let valueAtSlot2: bigint;
 
     let transitStateParams: IBaseVerifier.TransitStateParamsStruct = {
       newIdentitiesStatesRoot: ethers.ZeroHash,
@@ -239,26 +238,28 @@ describe("RegisterVerifier", () => {
       c: [0, 0],
     };
 
-    function buildValueAtSlot2(issuingAuthority: bigint, documentNullifier: bigint): bigint {
-      return poseidon.hash([1n, issuingAuthority, documentNullifier]);
-    }
+    let mz: Merklizer;
 
     beforeEach("setup", async () => {
       user = await new Identity(UserPK, IDOwnershipLevels, IDOwnershipLevels, IDOwnershipLevels).postBuild();
       issuer = await new Identity(IssuerPK, IssuerLevels, IssuerLevels, IssuerLevels).postBuild();
 
-      proofParamsStruct.votingAddress = await OWNER.getAddress();
-
-      valueAtSlot2 = buildValueAtSlot2(
-        BigInt(proofParamsStruct.registerProofParams.issuingAuthority),
-        BigInt(proofParamsStruct.registerProofParams.documentNullifier),
+      mz = await Merklizer.merklizeJSONLD(
+        setUpRegistrationDocument(
+          user,
+          issuer,
+          BigInt(proofParamsStruct.registerProofParams.issuingAuthority),
+          BigInt(proofParamsStruct.registerProofParams.documentNullifier),
+        ),
       );
 
-      [inputs, out] = await generateRegistrationData(user, issuer, valueAtSlot2, 0n);
+      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+
+      [inputs, out] = await generateRegistrationData(user, issuer, mz, 0n);
 
       [points, publicSignals] = await getRegisterZKP(
         inputs,
-        String(proofParamsStruct.votingAddress),
+        String(proofParamsStruct.registrationContractAddress),
         String(proofParamsStruct.registerProofParams.commitment),
       );
 
@@ -303,7 +304,7 @@ describe("RegisterVerifier", () => {
 
     it("should revert if the votingAddress is not a msg.sender", async () => {
       const wrongProofParamsStruct = deepClone(proofParamsStruct);
-      wrongProofParamsStruct.votingAddress = await FIRST.getAddress();
+      wrongProofParamsStruct.registrationContractAddress = await FIRST.getAddress();
 
       await expect(
         registerVerifier.transitStateAndProveRegistration(
@@ -328,7 +329,7 @@ describe("RegisterVerifier", () => {
       const identityInfo = await registerVerifier.getRegisterProofInfo(
         proofParamsStruct.registerProofParams.documentNullifier,
       );
-      expect(identityInfo.votingAddress).to.be.equal(proofParamsStruct.votingAddress);
+      expect(identityInfo.registrationContractAddress).to.be.equal(proofParamsStruct.registrationContractAddress);
       expect(identityInfo.registerProofParams.issuingAuthority).to.be.equal(
         proofParamsStruct.registerProofParams.issuingAuthority,
       );
