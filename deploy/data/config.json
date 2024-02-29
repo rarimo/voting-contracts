@@ -23,9 +23,6 @@
   "zkpQueriesStorage": "",
   "registerVerifierInfo": {
     "registerVerifierAddr": "",
-    "allowedIssuers": [
-      "22141090097313472271981543937918000822607062068116642128322298768197550081"
-    ],
     "issuingAuthorityWhitelist": [],
     "issuingAuthorityBlacklist": []
   },
@@ -41,7 +38,10 @@
         "claimPathKey": "7149981159332146589513683923839673175152485888476941863507542541133469121095",
         "claimPathNotExists": 0,
         "values": ["1"]
-      }
+      },
+      "allowedIssuers": [
+        "22141090097313472271981543937918000822607062068116642128322298768197550081"
+      ]
     }
   ]
 }

@@ -1,12 +1,20 @@
 import { Deployer } from "@solarity/hardhat-migrate";
 
-import { Config, getDeployedQueryValidatorContract, isZeroAddr, parseConfig, ZKPQueryInfo } from "@deploy-helper";
+import {
+  Config,
+  getDeployedQueryValidatorContract,
+  getDeployedVerifierContract,
+  isZeroAddr,
+  parseConfig,
+  ZKPQueryInfo,
+} from "@deploy-helper";
 
 import { IZKPQueriesStorage, ZKPQueriesStorage__factory } from "@ethers-v6";
 
 export = async (deployer: Deployer) => {
   const config: Config = parseConfig();
 
+  const registryVerifier = await getDeployedVerifierContract(deployer);
   const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, "ZKPQueriesStorage Proxy");
 
   let validator = await getDeployedQueryValidatorContract(deployer);
@@ -30,5 +38,7 @@ export = async (deployer: Deployer) => {
     await zkpQueriesStorage.setZKPQuery(zkpQueryInfo.queryId as string, queryInfo, {
       customData: { txName: " `ZKP Query with ${zkpQueryInfo.queryId} id is set`" },
     });
+
+    await registryVerifier.updateAllowedIssuers(zkpQueryInfo.query.schema, zkpQueryInfo.allowedIssuers!, true);
   }
 };

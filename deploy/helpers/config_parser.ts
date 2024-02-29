@@ -38,7 +38,6 @@ export type StateInitParams = {
 
 export type RegisterVerifierInfo = {
   registerVerifierAddr?: string;
-  allowedIssuers?: string[];
   issuingAuthorityWhitelist?: string[];
   issuingAuthorityBlacklist?: string[];
 };
@@ -48,6 +47,7 @@ export type ZKPQueryInfo = {
   validatorAddr?: string;
   circuitId: string;
   query: ZKPQuery;
+  allowedIssuers: string[];
 };
 
 export type ZKPQuery = {
@@ -127,6 +127,11 @@ function parseQueriesArr(zkpQueries: ZKPQueryInfo[]) {
     zkpQueryInfo.query.operator = BigInt(zkpQueryInfo.query.operator.toString());
     zkpQueryInfo.query.claimPathKey = BigInt(zkpQueryInfo.query.claimPathKey.toString());
     zkpQueryInfo.query.claimPathNotExists = BigInt(zkpQueryInfo.query.claimPathNotExists.toString());
+
+    if (zkpQueryInfo.allowedIssuers.length == 0) {
+      throw new Error(`Invalid allowedIssuers number for ${zkpQueryInfo.queryId} query.`);
+    }
+
     zkpQueryInfo.query.values = [
       ...zkpQueryInfo.query.values,
       ...new Array(64 - zkpQueryInfo.query.values.length).fill(0n).map((_i) => 0n),
