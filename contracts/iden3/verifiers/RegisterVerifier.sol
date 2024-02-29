@@ -225,12 +225,10 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             "RegisterVerifier: Issuing authority is blacklisted."
         );
 
-        if (_issuingAuthorityWhitelist.length() > 0) {
-            require(
+            require(_issuingAuthorityWhitelist.length() == 0 ||
                 isIssuingAuthorityWhitelisted(issuingAuthority_),
                 "RegisterVerifier: Issuing authority is not whitelisted."
             );
-        }
 
         uint256 commitmentIndex_ = queryValidator_.getCommitmentIndex();
         uint256 votingAddressIndex_ = queryValidator_.getVotingAddressIndex();
