@@ -2,6 +2,8 @@ import { DID, SchemaHash } from "@iden3/js-iden3-core";
 import { Merklizer, Path } from "@iden3/js-jsonld-merklization";
 import { LocalStorageDB, Merkletree, str2Bytes } from "@iden3/js-merkletree";
 
+import { REGISTRATION_CLAIM_SCHEMA_ID } from "@scripts";
+
 import {
   timestamp,
   requestID,
@@ -27,7 +29,7 @@ export async function generateMTPData(
   gistData: { id: bigint; state: bigint }[],
   claimSalt = 0n,
 ): Promise<[CredentialAtomicMTPOnChainV2Inputs, CredentialAtomicMTPOnChainV2Outputs]> {
-  const schemaHash = SchemaHash.newSchemaHashFromInt(31584121850720233142680868736086212256n);
+  const schemaHash = SchemaHash.newSchemaHashFromInt(REGISTRATION_CLAIM_SCHEMA_ID);
 
   const claim = await DefaultJSONUserClaim(user.id, schemaHash, mz, claimSalt);
 
@@ -169,7 +171,7 @@ export async function generateRegistrationData(
   mz: Merklizer,
   claimSalt = 0n,
 ): Promise<[CredentialAtomicMTPOnChainV2Inputs, CredentialAtomicMTPOnChainV2Outputs]> {
-  const schemaHash = SchemaHash.newSchemaHashFromInt(31584121850720233142680868736086212256n);
+  const schemaHash = SchemaHash.newSchemaHashFromInt(REGISTRATION_CLAIM_SCHEMA_ID);
 
   const claim = await RegistrationUserClaim(user.id, schemaHash, mz, claimSalt);
 

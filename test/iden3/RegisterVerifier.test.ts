@@ -9,7 +9,7 @@ import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { deepClone, IMPLEMENTATION_SLOT } from "@scripts";
+import { deepClone, IMPLEMENTATION_SLOT, REGISTRATION_CLAIM_SCHEMA_ID } from "@scripts";
 
 import {
   UserPK,
@@ -53,7 +53,7 @@ describe("RegisterVerifier", () => {
     queryValidator: ethers.ZeroAddress,
     circuitId: "credentialAtomicQueryMTPV2OnChainVoting",
     circuitQuery: {
-      schema: "31584121850720233142680868736086212256",
+      schema: REGISTRATION_CLAIM_SCHEMA_ID,
       slotIndex: 0,
       operator: Operator.EQ,
       claimPathKey: 7149981159332146589513683923839673175152485888476941863507542541133469121095n,
