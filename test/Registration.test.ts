@@ -9,7 +9,7 @@ import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
-import { deepClone, RegistrationStatus } from "@scripts";
+import { deepClone, REGISTRATION_CLAIM_SCHEMA_ID, RegistrationStatus } from "@scripts";
 
 import {
   getPoseidon,
@@ -54,7 +54,7 @@ describe("Registration", () => {
     queryValidator: ethers.ZeroAddress,
     circuitId: "credentialAtomicQueryMTPV2OnChainRegistration",
     circuitQuery: {
-      schema: "31584121850720233142680868736086212256",
+      schema: REGISTRATION_CLAIM_SCHEMA_ID,
       slotIndex: 0,
       operator: Operator.EQ,
       claimPathKey: 7149981159332146589513683923839673175152485888476941863507542541133469121095n,
@@ -131,7 +131,7 @@ describe("Registration", () => {
     proxy = await Proxy.deploy(await registerVerifier.getAddress(), "0x");
     registerVerifier = registerVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
 
-    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress());
+    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), [], []);
 
     ZKP_QUERY_INFO.queryValidator = await validator.getAddress();
     await zkpQueriesStorage.setZKPQuery(ZKP_QUERY_ID, ZKP_QUERY_INFO);

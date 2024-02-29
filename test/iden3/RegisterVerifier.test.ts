@@ -9,7 +9,7 @@ import { HDNodeWallet } from "ethers/src.ts/wallet/hdwallet";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { deepClone, IMPLEMENTATION_SLOT } from "@scripts";
+import { deepClone, IMPLEMENTATION_SLOT, REGISTRATION_CLAIM_SCHEMA_ID } from "@scripts";
 
 import {
   UserPK,
@@ -53,13 +53,38 @@ describe("RegisterVerifier", () => {
     queryValidator: ethers.ZeroAddress,
     circuitId: "credentialAtomicQueryMTPV2OnChainVoting",
     circuitQuery: {
-      schema: "31584121850720233142680868736086212256",
+      schema: REGISTRATION_CLAIM_SCHEMA_ID,
       slotIndex: 0,
       operator: Operator.EQ,
       claimPathKey: 7149981159332146589513683923839673175152485888476941863507542541133469121095n,
       claimPathNotExists: 0n,
       values: ["0"],
     },
+  };
+
+  let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
+    registrationContractAddress: ethers.ZeroAddress,
+    registerProofParams: {
+      issuingAuthority: poseidonHash("0x01"),
+      commitment: poseidonHash("0x02"),
+      documentNullifier: poseidonHash("0x03"),
+    },
+  };
+
+  let proveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
+    statesMerkleData: {
+      issuerId: 0,
+      issuerState: 0,
+      merkleProof: [],
+      createdAtTimestamp: 0,
+    },
+    inputs: [],
+    a: [0, 0],
+    b: [
+      [0, 0],
+      [0, 0],
+    ],
+    c: [0, 0],
   };
 
   let OWNER: SignerWithAddress;
@@ -128,7 +153,11 @@ describe("RegisterVerifier", () => {
     proxy = await Proxy.deploy(await registerVerifier.getAddress(), "0x");
     registerVerifier = registerVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
 
-    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress());
+    await registerVerifier.__RegisterVerifier_init(
+      await zkpQueriesStorage.getAddress(),
+      [proofParamsStruct.registerProofParams.issuingAuthority],
+      [],
+    );
 
     // Set up
 
@@ -146,9 +175,9 @@ describe("RegisterVerifier", () => {
 
   describe("#access", () => {
     it("should not initialize twice", async () => {
-      await expect(registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress())).to.be.revertedWith(
-        "Initializable: contract is already initialized",
-      );
+      await expect(
+        registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), [], []),
+      ).to.be.revertedWith("Initializable: contract is already initialized");
     });
 
     it("should revert if trying to call inner initializer", async () => {
@@ -192,6 +221,57 @@ describe("RegisterVerifier", () => {
     });
   });
 
+  describe("#issuing-authority-getters", () => {
+    let anotherRegisterVerifier: RegisterVerifier;
+
+    const whitelist = [1, 2, 3];
+    const blacklist = [3, 5];
+
+    beforeEach("setup", async () => {
+      const RegisterVerifier = await ethers.getContractFactory("RegisterVerifier", {
+        libraries: {
+          PoseidonUnit3L: await poseidon3L.getAddress(),
+        },
+      });
+      anotherRegisterVerifier = await RegisterVerifier.deploy();
+
+      await anotherRegisterVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), whitelist, blacklist);
+    });
+
+    it("should correctly manage whitelisted/blacklisted issuerAuthorities", async () => {
+      expect(await anotherRegisterVerifier.countIssuingAuthorityWhitelist()).to.be.equal(whitelist.length);
+      expect(await anotherRegisterVerifier.countIssuingAuthorityBlacklist()).to.be.equal(blacklist.length);
+
+      expect(await anotherRegisterVerifier.isIssuingAuthorityWhitelisted(whitelist[0])).to.be.true;
+      expect(await anotherRegisterVerifier.isIssuingAuthorityBlacklisted(blacklist[0])).to.be.true;
+
+      expect(await anotherRegisterVerifier.listIssuingAuthorityWhitelist(0, 5)).to.be.deep.equal(whitelist);
+      expect(await anotherRegisterVerifier.listIssuingAuthorityBlacklist(0, 5)).to.be.deep.equal(blacklist);
+    });
+
+    it("should revert if trying to prove identity if issuer is blacklisted", async () => {
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+
+      copyOfProofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      copyOfProofParamsStruct.registerProofParams.issuingAuthority = blacklist[0];
+
+      await expect(
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
+      ).to.be.revertedWith("RegisterVerifier: Issuing authority is blacklisted.");
+    });
+
+    it("should revert if whitelist is not empty and issuer is not whitelisted", async () => {
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+
+      copyOfProofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      copyOfProofParamsStruct.registerProofParams.issuingAuthority = 4;
+
+      await expect(
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
+      ).to.be.revertedWith("RegisterVerifier: Issuing authority is not whitelisted.");
+    });
+  });
+
   describe("#proveIdentity", () => {
     let user: Identity;
     let issuer: Identity;
@@ -204,15 +284,6 @@ describe("RegisterVerifier", () => {
 
     let statesMerkleData: ILightweightState.StatesMerkleDataStruct;
 
-    let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
-      registrationContractAddress: ethers.ZeroAddress,
-      registerProofParams: {
-        issuingAuthority: poseidonHash("0x01"),
-        commitment: poseidonHash("0x02"),
-        documentNullifier: poseidonHash("0x03"),
-      },
-    };
-
     let transitStateParams: IBaseVerifier.TransitStateParamsStruct = {
       newIdentitiesStatesRoot: ethers.ZeroHash,
       gistData: {
@@ -220,22 +291,6 @@ describe("RegisterVerifier", () => {
         createdAtTimestamp: 0,
       },
       proof: "0x",
-    };
-
-    let proveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
-      statesMerkleData: {
-        issuerId: 0,
-        issuerState: 0,
-        merkleProof: [],
-        createdAtTimestamp: 0,
-      },
-      inputs: [],
-      a: [0, 0],
-      b: [
-        [0, 0],
-        [0, 0],
-      ],
-      c: [0, 0],
     };
 
     let mz: Merklizer;

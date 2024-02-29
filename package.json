@@ -63,7 +63,7 @@
     "snarkjs": "^0.7.3",
     "solhint": "^4.1.1",
     "solhint-plugin-prettier": "^0.1.0",
-    "solidity-coverage": "^0.8.6",
+    "solidity-coverage": "0.8.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typechain": "^8.3.2",
