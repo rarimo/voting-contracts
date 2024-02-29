@@ -39,6 +39,8 @@ export type StateInitParams = {
 export type RegisterVerifierInfo = {
   registerVerifierAddr?: string;
   allowedIssuers?: string[];
+  issuingAuthorityWhitelist?: string[];
+  issuingAuthorityBlacklist?: string[];
 };
 
 export type ZKPQueryInfo = {

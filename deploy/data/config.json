@@ -25,7 +25,9 @@
     "registerVerifierAddr": "",
     "allowedIssuers": [
       "22141090097313472271981543937918000822607062068116642128322298768197550081"
-    ]
+    ],
+    "issuingAuthorityWhitelist": [],
+    "issuingAuthorityBlacklist": []
   },
   "zkpQueries": [
     {

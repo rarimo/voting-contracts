@@ -154,7 +154,11 @@ async function deployRegisterVerifier(deployer: Deployer, config: Config) {
 
     const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, "ZKPQueriesStorage Proxy");
 
-    await registerVerifier.__RegisterVerifier_init((await zkpQueriesStorage.getAddress()) as any);
+    await registerVerifier.__RegisterVerifier_init(
+      (await zkpQueriesStorage.getAddress()) as any,
+      config.registerVerifierInfo.issuingAuthorityWhitelist!,
+      config.registerVerifierInfo.issuingAuthorityBlacklist!,
+    );
   } else {
     await deployer.save(RegisterVerifier__factory, config.registerVerifierInfo.registerVerifierAddr!);
   }
