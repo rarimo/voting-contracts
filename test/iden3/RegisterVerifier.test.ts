@@ -250,20 +250,24 @@ describe("RegisterVerifier", () => {
     });
 
     it("should revert if trying to prove identity if issuer is blacklisted", async () => {
-      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
-      proofParamsStruct.registerProofParams.issuingAuthority = blacklist[0];
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+
+      copyOfProofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      copyOfProofParamsStruct.registerProofParams.issuingAuthority = blacklist[0];
 
       await expect(
-        anotherRegisterVerifier.proveRegistration(proveIdentityParams, proofParamsStruct),
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
       ).to.be.revertedWith("RegisterVerifier: Issuing authority is blacklisted.");
     });
 
     it("should revert if whitelist is not empty and issuer is not whitelisted", async () => {
-      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
-      proofParamsStruct.registerProofParams.issuingAuthority = 4;
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+
+      copyOfProofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      copyOfProofParamsStruct.registerProofParams.issuingAuthority = 4;
 
       await expect(
-        anotherRegisterVerifier.proveRegistration(proveIdentityParams, proofParamsStruct),
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
       ).to.be.revertedWith("RegisterVerifier: Issuing authority is not whitelisted.");
     });
   });
