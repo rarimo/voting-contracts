@@ -131,7 +131,7 @@ describe("Registration", () => {
     proxy = await Proxy.deploy(await registerVerifier.getAddress(), "0x");
     registerVerifier = registerVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
 
-    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress());
+    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), [], []);
 
     ZKP_QUERY_INFO.queryValidator = await validator.getAddress();
     await zkpQueriesStorage.setZKPQuery(ZKP_QUERY_ID, ZKP_QUERY_INFO);

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import {SetHelper} from "@solarity/solidity-lib/libs/arrays/SetHelper.sol";
+import {Paginator} from "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import {Vector} from "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
 import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
@@ -18,18 +22,32 @@ import {BaseVerifier} from "./BaseVerifier.sol";
 contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     using Vector for Vector.UintVector;
 
+    using SetHelper for EnumerableSet.UintSet;
+    using Paginator for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.UintSet;
+
     string public constant REGISTER_PROOF_QUERY_ID = "REGISTER_PROOF";
 
+    EnumerableSet.UintSet internal _issuingAuthorityWhitelist;
+    EnumerableSet.UintSet internal _issuingAuthorityBlacklist;
+
     // documentNullifier => RegisterProofInfo
-    mapping(uint256 => RegisterProofInfo) internal _registrationProofInfo;
+    mapping(uint256 => RegisterProofInfo) private _registrationProofInfo;
 
     modifier onlyVoting(RegisterProofInfo memory registerProofInfo_) {
         _onlyVoting(registerProofInfo_);
         _;
     }
 
-    function __RegisterVerifier_init(IZKPQueriesStorage zkpQueriesStorage_) external initializer {
+    function __RegisterVerifier_init(
+        IZKPQueriesStorage zkpQueriesStorage_,
+        uint256[] memory issuingAuthorityWhitelist_,
+        uint256[] memory issuingAuthorityBlacklist_
+    ) external initializer {
         __BaseVerifier_init(zkpQueriesStorage_);
+
+        _issuingAuthorityWhitelist.add(issuingAuthorityWhitelist_);
+        _issuingAuthorityBlacklist.add(issuingAuthorityBlacklist_);
     }
 
     /**
@@ -68,6 +86,54 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
      */
     function isIdentityRegistered(uint256 documentNullifier_) public view returns (bool) {
         return _registrationProofInfo[documentNullifier_].registerProofParams.commitment != 0;
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function isIssuingAuthorityWhitelisted(uint256 issuingAuthority_) public view returns (bool) {
+        return _issuingAuthorityWhitelist.contains(issuingAuthority_);
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function isIssuingAuthorityBlacklisted(uint256 issuingAuthority_) public view returns (bool) {
+        return _issuingAuthorityBlacklist.contains(issuingAuthority_);
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function countIssuingAuthorityWhitelist() external view returns (uint256) {
+        return _issuingAuthorityWhitelist.length();
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function countIssuingAuthorityBlacklist() external view returns (uint256) {
+        return _issuingAuthorityBlacklist.length();
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function listIssuingAuthorityWhitelist(
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (uint256[] memory) {
+        return _issuingAuthorityWhitelist.part(offset_, limit_);
+    }
+
+    /**
+     * @inheritdoc IRegisterVerifier
+     */
+    function listIssuingAuthorityBlacklist(
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (uint256[] memory) {
+        return _issuingAuthorityBlacklist.part(offset_, limit_);
     }
 
     function _proveRegistration(
@@ -151,7 +217,21 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         IQueryMTPValidator queryValidator_,
         uint256[] memory inputs_,
         RegisterProofInfo memory registerProofInfo_
-    ) private pure {
+    ) private view {
+        uint256 issuingAuthority_ = registerProofInfo_.registerProofParams.issuingAuthority;
+
+        require(
+            !isIssuingAuthorityBlacklisted(issuingAuthority_),
+            "RegisterVerifier: Issuing authority is blacklisted."
+        );
+
+        if (_issuingAuthorityWhitelist.length() > 0) {
+            require(
+                isIssuingAuthorityWhitelisted(issuingAuthority_),
+                "RegisterVerifier: Issuing authority is not whitelisted."
+            );
+        }
+
         uint256 commitmentIndex_ = queryValidator_.getCommitmentIndex();
         uint256 votingAddressIndex_ = queryValidator_.getVotingAddressIndex();
 

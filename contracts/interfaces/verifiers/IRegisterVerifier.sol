@@ -75,4 +75,50 @@ interface IRegisterVerifier is IBaseVerifier {
      * @return bool True if the identity is registered, false otherwise.
      */
     function isIdentityRegistered(uint256 documentNullifier_) external view returns (bool);
+
+    /**
+     * @notice Checks if an issuing authority is whitelisted.
+     * @param issuingAuthority_ The identifier for the issuing authority.
+     * @return bool True if the issuing authority is whitelisted, false otherwise.
+     */
+    function isIssuingAuthorityWhitelisted(uint256 issuingAuthority_) external view returns (bool);
+
+    /**
+     * @notice Checks if an issuing authority is blacklisted.
+     * @param issuingAuthority_ The identifier for the issuing authority.
+     * @return bool True if the issuing authority is blacklisted, false otherwise.
+     */
+    function isIssuingAuthorityBlacklisted(uint256 issuingAuthority_) external view returns (bool);
+
+    /**
+     * @notice Returns the number of issuing authorities in the whitelist.
+     */
+    function countIssuingAuthorityWhitelist() external view returns (uint256);
+
+    /**
+     * @notice Returns the number of issuing authorities in the blacklist.
+     */
+    function countIssuingAuthorityBlacklist() external view returns (uint256);
+
+    /**
+     * @notice Returns a list of issuing authorities in the whitelist.
+     * @param offset_ The offset from which to start fetching the list.
+     * @param limit_ The maximum number of items to fetch.
+     * @return uint256[] The list of issuing authorities in the whitelist.
+     */
+    function listIssuingAuthorityWhitelist(
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (uint256[] memory);
+
+    /**
+     * @notice Returns a list of issuing authorities in the blacklist.
+     * @param offset_ The offset from which to start fetching the list.
+     * @param limit_ The maximum number of items to fetch.
+     * @return uint256[] The list of issuing authorities in the blacklist.
+     */
+    function listIssuingAuthorityBlacklist(
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (uint256[] memory);
 }

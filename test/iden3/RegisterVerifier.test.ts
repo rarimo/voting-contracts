@@ -62,6 +62,31 @@ describe("RegisterVerifier", () => {
     },
   };
 
+  let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
+    registrationContractAddress: ethers.ZeroAddress,
+    registerProofParams: {
+      issuingAuthority: poseidonHash("0x01"),
+      commitment: poseidonHash("0x02"),
+      documentNullifier: poseidonHash("0x03"),
+    },
+  };
+
+  let proveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
+    statesMerkleData: {
+      issuerId: 0,
+      issuerState: 0,
+      merkleProof: [],
+      createdAtTimestamp: 0,
+    },
+    inputs: [],
+    a: [0, 0],
+    b: [
+      [0, 0],
+      [0, 0],
+    ],
+    c: [0, 0],
+  };
+
   let OWNER: SignerWithAddress;
   let FIRST: SignerWithAddress;
   let SIGNER: HDNodeWallet;
@@ -128,7 +153,11 @@ describe("RegisterVerifier", () => {
     proxy = await Proxy.deploy(await registerVerifier.getAddress(), "0x");
     registerVerifier = registerVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
 
-    await registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress());
+    await registerVerifier.__RegisterVerifier_init(
+      await zkpQueriesStorage.getAddress(),
+      [proofParamsStruct.registerProofParams.issuingAuthority],
+      [],
+    );
 
     // Set up
 
@@ -146,9 +175,9 @@ describe("RegisterVerifier", () => {
 
   describe("#access", () => {
     it("should not initialize twice", async () => {
-      await expect(registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress())).to.be.revertedWith(
-        "Initializable: contract is already initialized",
-      );
+      await expect(
+        registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), [], []),
+      ).to.be.revertedWith("Initializable: contract is already initialized");
     });
 
     it("should revert if trying to call inner initializer", async () => {
@@ -192,6 +221,53 @@ describe("RegisterVerifier", () => {
     });
   });
 
+  describe("#issuing-authority-getters", () => {
+    let anotherRegisterVerifier: RegisterVerifier;
+
+    const whitelist = [1, 2, 3];
+    const blacklist = [3, 5];
+
+    beforeEach("setup", async () => {
+      const RegisterVerifier = await ethers.getContractFactory("RegisterVerifier", {
+        libraries: {
+          PoseidonUnit3L: await poseidon3L.getAddress(),
+        },
+      });
+      anotherRegisterVerifier = await RegisterVerifier.deploy();
+
+      await anotherRegisterVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), whitelist, blacklist);
+    });
+
+    it("should correctly manage whitelisted/blacklisted issuerAuthorities", async () => {
+      expect(await anotherRegisterVerifier.countIssuingAuthorityWhitelist()).to.be.equal(whitelist.length);
+      expect(await anotherRegisterVerifier.countIssuingAuthorityBlacklist()).to.be.equal(blacklist.length);
+
+      expect(await anotherRegisterVerifier.isIssuingAuthorityWhitelisted(whitelist[0])).to.be.true;
+      expect(await anotherRegisterVerifier.isIssuingAuthorityBlacklisted(blacklist[0])).to.be.true;
+
+      expect(await anotherRegisterVerifier.listIssuingAuthorityWhitelist(0, 5)).to.be.deep.equal(whitelist);
+      expect(await anotherRegisterVerifier.listIssuingAuthorityBlacklist(0, 5)).to.be.deep.equal(blacklist);
+    });
+
+    it("should revert if trying to prove identity if issuer is blacklisted", async () => {
+      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      proofParamsStruct.registerProofParams.issuingAuthority = blacklist[0];
+
+      await expect(
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, proofParamsStruct),
+      ).to.be.revertedWith("RegisterVerifier: Issuing authority is blacklisted.");
+    });
+
+    it("should revert if whitelist is not empty and issuer is not whitelisted", async () => {
+      proofParamsStruct.registrationContractAddress = await OWNER.getAddress();
+      proofParamsStruct.registerProofParams.issuingAuthority = 4;
+
+      await expect(
+        anotherRegisterVerifier.proveRegistration(proveIdentityParams, proofParamsStruct),
+      ).to.be.revertedWith("RegisterVerifier: Issuing authority is not whitelisted.");
+    });
+  });
+
   describe("#proveIdentity", () => {
     let user: Identity;
     let issuer: Identity;
@@ -204,15 +280,6 @@ describe("RegisterVerifier", () => {
 
     let statesMerkleData: ILightweightState.StatesMerkleDataStruct;
 
-    let proofParamsStruct: IRegisterVerifier.RegisterProofInfoStruct = {
-      registrationContractAddress: ethers.ZeroAddress,
-      registerProofParams: {
-        issuingAuthority: poseidonHash("0x01"),
-        commitment: poseidonHash("0x02"),
-        documentNullifier: poseidonHash("0x03"),
-      },
-    };
-
     let transitStateParams: IBaseVerifier.TransitStateParamsStruct = {
       newIdentitiesStatesRoot: ethers.ZeroHash,
       gistData: {
@@ -220,22 +287,6 @@ describe("RegisterVerifier", () => {
         createdAtTimestamp: 0,
       },
       proof: "0x",
-    };
-
-    let proveIdentityParams: IBaseVerifier.ProveIdentityParamsStruct = {
-      statesMerkleData: {
-        issuerId: 0,
-        issuerState: 0,
-        merkleProof: [],
-        createdAtTimestamp: 0,
-      },
-      inputs: [],
-      a: [0, 0],
-      b: [
-        [0, 0],
-        [0, 0],
-      ],
-      c: [0, 0],
     };
 
     let mz: Merklizer;
