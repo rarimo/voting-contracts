@@ -382,6 +382,7 @@ describe("RegisterVerifier", () => {
       );
 
       const identityInfo = await registerVerifier.getRegisterProofInfo(
+        proofParamsStruct.registrationContractAddress,
         proofParamsStruct.registerProofParams.documentNullifier,
       );
       expect(identityInfo.registrationContractAddress).to.be.equal(proofParamsStruct.registrationContractAddress);
@@ -393,8 +394,12 @@ describe("RegisterVerifier", () => {
         proofParamsStruct.registerProofParams.documentNullifier,
       );
 
-      expect(await registerVerifier.isIdentityRegistered(proofParamsStruct.registerProofParams.documentNullifier)).to.be
-        .true;
+      expect(
+        await registerVerifier.isIdentityRegistered(
+          proofParamsStruct.registrationContractAddress,
+          proofParamsStruct.registerProofParams.documentNullifier,
+        ),
+      ).to.be.true;
     });
 
     it("should revert if trying to vote twice, but should handle same state transition", async () => {

@@ -31,11 +31,11 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     EnumerableSet.UintSet internal _issuingAuthorityWhitelist;
     EnumerableSet.UintSet internal _issuingAuthorityBlacklist;
 
-    // documentNullifier => RegisterProofInfo
-    mapping(uint256 => RegisterProofInfo) private _registrationProofInfo;
+    // registrationContract => documentNullifier => RegisterProofInfo
+    mapping(address => mapping(uint256 => RegisterProofInfo)) private _registrationProofInfo;
 
-    modifier onlyVoting(RegisterProofInfo memory registerProofInfo_) {
-        _onlyVoting(registerProofInfo_);
+    modifier onlyRegistrationContract(RegisterProofInfo memory registerProofInfo_) {
+        _onlyRegistrationContract(registerProofInfo_);
         _;
     }
 
@@ -56,7 +56,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     function proveRegistration(
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_
-    ) external onlyVoting(registerProofInfo_) {
+    ) external onlyRegistrationContract(registerProofInfo_) {
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
 
@@ -67,7 +67,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         ProveIdentityParams memory proveIdentityParams_,
         RegisterProofInfo memory registerProofInfo_,
         TransitStateParams memory transitStateParams_
-    ) external onlyVoting(registerProofInfo_) {
+    ) external onlyRegistrationContract(registerProofInfo_) {
         _transitState(transitStateParams_);
         _proveRegistration(proveIdentityParams_, registerProofInfo_);
     }
@@ -76,16 +76,23 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
      * @inheritdoc IRegisterVerifier
      */
     function getRegisterProofInfo(
+        address registrationContract_,
         uint256 documentNullifier_
     ) external view returns (RegisterProofInfo memory) {
-        return _registrationProofInfo[documentNullifier_];
+        return _registrationProofInfo[registrationContract_][documentNullifier_];
     }
 
     /**
      * @inheritdoc IRegisterVerifier
      */
-    function isIdentityRegistered(uint256 documentNullifier_) public view returns (bool) {
-        return _registrationProofInfo[documentNullifier_].registerProofParams.commitment != 0;
+    function isIdentityRegistered(
+        address registrationContract_,
+        uint256 documentNullifier_
+    ) public view returns (bool) {
+        return
+            _registrationProofInfo[registrationContract_][documentNullifier_]
+                .registerProofParams
+                .commitment != 0;
     }
 
     /**
@@ -142,14 +149,15 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     ) internal {
         _verify(REGISTER_PROOF_QUERY_ID, proveIdentityParams_, registerProofInfo_);
 
+        address registrationContract_ = registerProofInfo_.registrationContractAddress;
         uint256 documentNullifier_ = registerProofInfo_.registerProofParams.documentNullifier;
 
         require(
-            !isIdentityRegistered(documentNullifier_),
+            !isIdentityRegistered(registrationContract_, documentNullifier_),
             "RegisterVerifier: Identity is already registered."
         );
 
-        _registrationProofInfo[documentNullifier_] = registerProofInfo_;
+        _registrationProofInfo[registrationContract_][documentNullifier_] = registerProofInfo_;
 
         emit RegisterAccepted(documentNullifier_, registerProofInfo_);
     }
@@ -203,10 +211,10 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
     }
 
     /**
-     * @dev The voting address is one of the inputs of the ZKP; therefore, we ensure that the caller is registered for
-     * voting with the exact ID, which, by architecture, is the same as the voting address.
+     * @dev The registration address is one of the inputs of the ZKP; therefore, we ensure that
+     * the caller is registered with the exact ID, which, by design, is the same as the registration contract address.
      */
-    function _onlyVoting(RegisterProofInfo memory registerProofInfo_) private view {
+    function _onlyRegistrationContract(RegisterProofInfo memory registerProofInfo_) private view {
         require(
             msg.sender == registerProofInfo_.registrationContractAddress,
             "RegisterVerifier: the caller is not the voting contract."
