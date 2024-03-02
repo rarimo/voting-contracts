@@ -367,6 +367,54 @@ describe("Registration", () => {
 
       await registration.register(proveIdentityParams, proofParamsStruct, transitStateParams, false);
     });
+
+    it("should register for parallel registrations", async () => {
+      const Registration = await ethers.getContractFactory("Registration", {
+        libraries: {
+          PoseidonUnit1L: await (await getPoseidon(1)).getAddress(),
+          PoseidonUnit2L: await (await getPoseidon(2)).getAddress(),
+          PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
+        },
+      });
+      let anotherRegistration: Registration = await Registration.deploy(
+        await registerVerifier.getAddress(),
+        treeHeight,
+      );
+
+      const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+      let proxy = await Proxy.deploy(await anotherRegistration.getAddress(), "0x");
+
+      anotherRegistration = anotherRegistration.attach(await proxy.getAddress()) as Registration;
+
+      const commitmentStartTimestampFor2Reg = (await time.latest()) + 10;
+
+      await anotherRegistration.__Registration_init({
+        ...deepClone(defaultRegistrationParams),
+        commitmentStart: commitmentStartTimestampFor2Reg,
+      });
+      await time.increaseTo(commitmentStartTimestampFor2Reg);
+
+      await registration.register(proveIdentityParams, proofParamsStruct, transitStateParams, true);
+
+      [points, publicSignals] = await getRegisterZKP(
+        inputs,
+        String(ethers.toBeHex(await anotherRegistration.getAddress(), 32)),
+        String(proofParamsStruct.commitment),
+      );
+
+      proveIdentityParams.inputs = publicSignals;
+      proveIdentityParams.a = points.a;
+      proveIdentityParams.b = points.b;
+      proveIdentityParams.c = points.c;
+
+      await anotherRegistration.register(proveIdentityParams, proofParamsStruct, transitStateParams, true);
+
+      const documentNullifier = proofParamsStruct.documentNullifier;
+      expect(await registerVerifier.isIdentityRegistered(await registration.getAddress(), documentNullifier)).to.be
+        .true;
+      expect(await registerVerifier.isIdentityRegistered(await anotherRegistration.getAddress(), documentNullifier)).to
+        .be.true;
+    });
   });
 
   describe("#getRegistrationStatus", () => {
