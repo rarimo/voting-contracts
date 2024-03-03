@@ -410,10 +410,8 @@ describe("Registration", () => {
       await anotherRegistration.register(proveIdentityParams, proofParamsStruct, transitStateParams, true);
 
       const documentNullifier = proofParamsStruct.documentNullifier;
-      expect(await registerVerifier.isIdentityRegistered(await registration.getAddress(), documentNullifier)).to.be
-        .true;
-      expect(await registerVerifier.isIdentityRegistered(await anotherRegistration.getAddress(), documentNullifier)).to
-        .be.true;
+      expect(await registration.isUserRegistered(documentNullifier)).to.be.true;
+      expect(await anotherRegistration.isUserRegistered(documentNullifier)).to.be.true;
     });
   });
 
