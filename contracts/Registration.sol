@@ -139,8 +139,8 @@ contract Registration is IRegistration, PoseidonSMT, Initializable {
     /**
      * @inheritdoc IRegistration
      */
-    function isUserRegistered(uint256 documentNullifier) external view returns (bool) {
-        return registerVerifier.isIdentityRegistered(address(this), documentNullifier);
+    function isUserRegistered(uint256 documentNullifier_) external view returns (bool) {
+        return registerVerifier.isIdentityRegistered(address(this), documentNullifier_);
     }
 
     function _validateRegistrationParams(
