@@ -118,4 +118,11 @@ interface IRegistration {
      * @notice Retrieves the current status of the registration phase
      */
     function getRegistrationStatus() external view returns (RegistrationStatus);
+
+    /**
+     * @notice Checks if a user is already registered
+     * @param documentNullifier_ The nullifier of the user's document
+     * @return True if the user is already registered, false otherwise
+     */
+    function isUserRegistered(uint256 documentNullifier_) external view returns (bool);
 }

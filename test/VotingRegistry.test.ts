@@ -80,6 +80,12 @@ describe("VotingRegistry", () => {
         "VotingRegistry: names and implementations length mismatch",
       );
     });
+
+    it("should revert if trying to set empty pool type", async () => {
+      await expect(votingRegistry.connect(OWNER).setNewImplementations([""], [ethers.ZeroAddress])).to.be.revertedWith(
+        "VotingRegistry: pool type cannot be empty",
+      );
+    });
   });
 
   describe("#addProxyPool/bindVotingToRegistration", () => {

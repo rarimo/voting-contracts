@@ -62,19 +62,25 @@ interface IRegisterVerifier is IBaseVerifier {
 
     /**
      * @notice Retrieves registration proof information for a given document nullifier.
+     * @param registrationContract_ The address of the registration contract.
      * @param documentNullifier_ The unique nullifier for the document.
      * @return RegisterProofInfo The registration proof information.
      */
     function getRegisterProofInfo(
+        address registrationContract_,
         uint256 documentNullifier_
     ) external view returns (RegisterProofInfo memory);
 
     /**
      * @notice Checks if an identity is registered.
+     * @param registrationContract_ The address of the registration contract.
      * @param documentNullifier_ The unique nullifier for the document.
      * @return bool True if the identity is registered, false otherwise.
      */
-    function isIdentityRegistered(uint256 documentNullifier_) external view returns (bool);
+    function isIdentityRegistered(
+        address registrationContract_,
+        uint256 documentNullifier_
+    ) external view returns (bool);
 
     /**
      * @notice Checks if an issuing authority is whitelisted.

@@ -10,10 +10,10 @@ import {IQueryMTPValidator} from "../../interfaces/IQueryMTPValidator.sol";
  * @dev This contract is a copy of the QueryMTPValidator contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
  */
 contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
-    string internal constant CIRCUIT_ID = "credentialAtomicQueryMTPV2OnChain";
+    string internal constant CIRCUIT_ID = "credentialAtomicQueryMTPV2OnChainVoting";
     uint256 internal constant USER_ID_INDEX = 1;
     uint256 internal constant CHALLENGE_INDEX = 4;
-    uint256 internal constant VOTING_ADDRESS_INDEX = 11;
+    uint256 internal constant REGISTRATION_ADDRESS_INDEX = 11;
     uint256 internal constant COMMITMENT_INDEX = 12;
 
     function __QueryMTPValidator_init(
@@ -55,8 +55,8 @@ contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
         return CHALLENGE_INDEX;
     }
 
-    function getVotingAddressIndex() external pure override returns (uint256 index) {
-        return VOTING_ADDRESS_INDEX;
+    function getRegistrationAddressIndex() external pure override returns (uint256 index) {
+        return REGISTRATION_ADDRESS_INDEX;
     }
 
     function getCommitmentIndex() external pure override returns (uint256 index) {

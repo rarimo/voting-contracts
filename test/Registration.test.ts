@@ -367,6 +367,72 @@ describe("Registration", () => {
 
       await registration.register(proveIdentityParams, proofParamsStruct, transitStateParams, false);
     });
+
+    it("should register for parallel registrations", async () => {
+      const Registration = await ethers.getContractFactory("Registration", {
+        libraries: {
+          PoseidonUnit1L: await (await getPoseidon(1)).getAddress(),
+          PoseidonUnit2L: await (await getPoseidon(2)).getAddress(),
+          PoseidonUnit3L: await (await getPoseidon(3)).getAddress(),
+        },
+      });
+      let anotherRegistration: Registration = await Registration.deploy(
+        await registerVerifier.getAddress(),
+        treeHeight,
+      );
+
+      const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+      let proxy = await Proxy.deploy(await anotherRegistration.getAddress(), "0x");
+
+      anotherRegistration = anotherRegistration.attach(await proxy.getAddress()) as Registration;
+
+      const commitmentStartTimestampFor2Reg = (await time.latest()) + 10;
+
+      await anotherRegistration.__Registration_init({
+        ...deepClone(defaultRegistrationParams),
+        commitmentStart: commitmentStartTimestampFor2Reg,
+      });
+      await time.increaseTo(commitmentStartTimestampFor2Reg);
+
+      await registration.register(proveIdentityParams, proofParamsStruct, transitStateParams, true);
+
+      [points, publicSignals] = await getRegisterZKP(
+        inputs,
+        String(ethers.toBeHex(await anotherRegistration.getAddress(), 32)),
+        String(proofParamsStruct.commitment),
+      );
+
+      proveIdentityParams.inputs = publicSignals;
+      proveIdentityParams.a = points.a;
+      proveIdentityParams.b = points.b;
+      proveIdentityParams.c = points.c;
+
+      await anotherRegistration.register(proveIdentityParams, proofParamsStruct, transitStateParams, true);
+
+      const documentNullifier = proofParamsStruct.documentNullifier;
+      expect(await registration.isUserRegistered(documentNullifier)).to.be.true;
+      expect(await anotherRegistration.isUserRegistered(documentNullifier)).to.be.true;
+    });
+
+    it("should revert if trying to register with zero commitment", async () => {
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+      copyOfProofParamsStruct.commitment = ethers.ZeroHash;
+
+      [points, publicSignals] = await getRegisterZKP(
+        inputs,
+        String(ethers.toBeHex(await registration.getAddress(), 32)),
+        ethers.ZeroHash,
+      );
+
+      proveIdentityParams.inputs = publicSignals;
+      proveIdentityParams.a = points.a;
+      proveIdentityParams.b = points.b;
+      proveIdentityParams.c = points.c;
+
+      await expect(
+        registration.register(proveIdentityParams, copyOfProofParamsStruct, transitStateParams, true),
+      ).to.be.rejectedWith("RegisterVerifier: commitment should not be zero");
+    });
   });
 
   describe("#getRegistrationStatus", () => {

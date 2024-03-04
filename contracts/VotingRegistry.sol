@@ -73,6 +73,8 @@ contract VotingRegistry is IVotingRegistry, Initializable, OwnableUpgradeable, U
         address[] memory newImplementations_
     ) external onlyOwner onlyEqualLength(poolTypes_, newImplementations_) {
         for (uint256 i = 0; i < poolTypes_.length; i++) {
+            require(bytes(poolTypes_[i]).length > 0, "VotingRegistry: pool type cannot be empty");
+
             require(
                 Address.isContract(newImplementations_[i]),
                 "VotingRegistry: the implementation address is not a contract"
