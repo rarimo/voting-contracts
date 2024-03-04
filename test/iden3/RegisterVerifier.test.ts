@@ -487,7 +487,7 @@ describe("RegisterVerifier", () => {
           proofParamsStruct,
           transitStateParams,
         ),
-      ).to.be.revertedWith("RegisterVerifier: voting address does not match the requested one.");
+      ).to.be.revertedWith("RegisterVerifier: registration address does not match the requested one.");
     });
 
     it("should revert if issuer is not allowed", async () => {

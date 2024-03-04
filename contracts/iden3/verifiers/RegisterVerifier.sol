@@ -240,7 +240,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         );
 
         uint256 commitmentIndex_ = queryValidator_.getCommitmentIndex();
-        uint256 registrationAddressIndex_ = queryValidator_.getVotingAddressIndex();
+        uint256 registrationAddressIndex_ = queryValidator_.getRegistrationAddressIndex();
 
         require(
             bytes32(inputs_[commitmentIndex_]) ==
