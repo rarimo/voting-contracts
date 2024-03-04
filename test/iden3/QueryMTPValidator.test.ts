@@ -357,7 +357,7 @@ describe("QueryMTPValidator", () => {
 
   describe("#getters", () => {
     it("should get circuit id, user id and challenge", async () => {
-      expect(await validator.getCircuitId()).to.be.equal("credentialAtomicQueryMTPV2OnChain");
+      expect(await validator.getCircuitId()).to.be.equal("credentialAtomicQueryMTPV2OnChainVoting");
       expect(await validator.getUserIdIndex()).to.be.equal(1);
       expect(await validator.getChallengeInputIndex()).to.be.equal(4);
     });
