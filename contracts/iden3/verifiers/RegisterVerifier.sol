@@ -240,7 +240,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         );
 
         uint256 commitmentIndex_ = queryValidator_.getCommitmentIndex();
-        uint256 votingAddressIndex_ = queryValidator_.getVotingAddressIndex();
+        uint256 registrationAddressIndex_ = queryValidator_.getVotingAddressIndex();
 
         require(
             bytes32(inputs_[commitmentIndex_]) ==
@@ -251,9 +251,9 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
         require(inputs_[commitmentIndex_] != 0, "RegisterVerifier: commitment should not be zero");
 
         require(
-            inputs_[votingAddressIndex_] ==
+            inputs_[registrationAddressIndex_] ==
                 uint256(uint160(registerProofInfo_.registrationContractAddress)),
-            "RegisterVerifier: voting address does not match the requested one."
+            "RegisterVerifier: registration address does not match the requested one."
         );
     }
 }
