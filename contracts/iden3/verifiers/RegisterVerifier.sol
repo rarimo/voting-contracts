@@ -248,6 +248,8 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             "RegisterVerifier: commitment does not match the requested one."
         );
 
+        require(inputs_[commitmentIndex_] != 0, "RegisterVerifier: commitment should not be zero");
+
         require(
             inputs_[votingAddressIndex_] ==
                 uint256(uint160(registerProofInfo_.registrationContractAddress)),

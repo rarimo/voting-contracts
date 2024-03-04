@@ -413,6 +413,26 @@ describe("Registration", () => {
       expect(await registration.isUserRegistered(documentNullifier)).to.be.true;
       expect(await anotherRegistration.isUserRegistered(documentNullifier)).to.be.true;
     });
+
+    it("should revert if trying to register with zero commitment", async () => {
+      const copyOfProofParamsStruct = deepClone(proofParamsStruct);
+      copyOfProofParamsStruct.commitment = ethers.ZeroHash;
+
+      [points, publicSignals] = await getRegisterZKP(
+        inputs,
+        String(ethers.toBeHex(await registration.getAddress(), 32)),
+        ethers.ZeroHash,
+      );
+
+      proveIdentityParams.inputs = publicSignals;
+      proveIdentityParams.a = points.a;
+      proveIdentityParams.b = points.b;
+      proveIdentityParams.c = points.c;
+
+      await expect(
+        registration.register(proveIdentityParams, copyOfProofParamsStruct, transitStateParams, true),
+      ).to.be.rejectedWith("RegisterVerifier: commitment should not be zero");
+    });
   });
 
   describe("#getRegistrationStatus", () => {

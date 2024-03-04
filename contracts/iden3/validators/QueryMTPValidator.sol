@@ -10,7 +10,7 @@ import {IQueryMTPValidator} from "../../interfaces/IQueryMTPValidator.sol";
  * @dev This contract is a copy of the QueryMTPValidator contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
  */
 contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
-    string internal constant CIRCUIT_ID = "credentialAtomicQueryMTPV2OnChain";
+    string internal constant CIRCUIT_ID = "credentialAtomicQueryMTPV2OnChainVoting";
     uint256 internal constant USER_ID_INDEX = 1;
     uint256 internal constant CHALLENGE_INDEX = 4;
     uint256 internal constant VOTING_ADDRESS_INDEX = 11;

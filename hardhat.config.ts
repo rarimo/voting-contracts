@@ -106,7 +106,10 @@ const config: HardhatUserConfig = {
     strict: false,
   },
   gasReporter: {
-    enabled: false,
+    currency: "USD",
+    gasPrice: 50,
+    enabled: true,
+    coinmarketcap: `${process.env.COINMARKETCAP_KEY}`,
   },
   typechain: {
     outDir: "generated-types",
