@@ -124,5 +124,5 @@ interface IRegistration {
      * @param documentNullifier The nullifier of the user's document
      * @return True if the user is already registered, false otherwise
      */
-    function isUserRegistered(uint256 documentNullifier) external view returns (bool);
+    function isUserRegistered(uint256 documentNullifier_) external view returns (bool);
 }
