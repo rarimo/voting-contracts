@@ -87,7 +87,7 @@ describe("QueryMTPValidator", () => {
     it("should not initialize twice", async () => {
       await expect(
         validator.__QueryMTPValidator_init(ethers.ZeroAddress, await stateContract.getAddress(), await time.latest()),
-      ).to.be.revertedWith("Initializable: contract is already initialized");
+      ).to.be.rejectedWith("Initializable: contract is already initialized");
     });
 
     it("should revert if trying to call inner initializer", async () => {
@@ -100,13 +100,13 @@ describe("QueryMTPValidator", () => {
           await stateContract.getAddress(),
           await time.latest(),
         ),
-      ).to.be.revertedWith("Initializable: contract is not initializing");
+      ).to.be.rejectedWith("Initializable: contract is not initializing");
     });
   });
 
   describe("#setters", () => {
     it("should set verifier only by owner", async () => {
-      await expect(validator.connect(FIRST).setVerifier(ethers.ZeroAddress)).to.be.revertedWith(
+      await expect(validator.connect(FIRST).setVerifier(ethers.ZeroAddress)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
@@ -114,7 +114,7 @@ describe("QueryMTPValidator", () => {
     });
 
     it("should set identites states update time only by owner", async () => {
-      await expect(validator.connect(FIRST).setIdentitesStatesUpdateTime(await time.latest())).to.be.revertedWith(
+      await expect(validator.connect(FIRST).setIdentitesStatesUpdateTime(await time.latest())).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
@@ -190,13 +190,13 @@ describe("QueryMTPValidator", () => {
           wrongPoints.c,
           out.circuitQueryHash,
         ),
-      ).to.be.revertedWith("QueryValidator: proof is not valid");
+      ).to.be.rejectedWith("QueryValidator: proof is not valid");
     });
 
     it("should revert if the queryHash is incorrect", async () => {
       await expect(
         validator.verify(statesMerkleData, publicSignals, points.a, points.b, points.c, ethers.ZeroHash),
-      ).to.be.revertedWith("QueryValidator: query hash does not match the requested one");
+      ).to.be.rejectedWith("QueryValidator: query hash does not match the requested one");
     });
 
     it("should revert if different Iden and Rev states are used", async () => {
@@ -220,7 +220,7 @@ describe("QueryMTPValidator", () => {
           newPoints.c,
           data[1].circuitQueryHash,
         ),
-      ).to.be.revertedWith("QueryValidator: only actual states must be used");
+      ).to.be.rejectedWith("QueryValidator: only actual states must be used");
     });
 
     it("should revert if states merkle data is incorrect", async () => {
@@ -229,7 +229,7 @@ describe("QueryMTPValidator", () => {
 
       await expect(
         validator.verify(wrongStatesMerkleData, publicSignals, points.a, points.b, points.c, out.circuitQueryHash),
-      ).to.be.revertedWith("QueryValidator: invalid issuer data in the states merkle data struct");
+      ).to.be.rejectedWith("QueryValidator: invalid issuer data in the states merkle data struct");
     });
 
     it("should revert if the gistRootData is incorrect", async () => {
@@ -265,7 +265,7 @@ describe("QueryMTPValidator", () => {
           newPoints.c,
           out.circuitQueryHash,
         ),
-      ).to.be.revertedWith("QueryValidator: gist root state isn't in state contract");
+      ).to.be.rejectedWith("QueryValidator: gist root state isn't in state contract");
     });
 
     it("should revert if issuer state isn't in state contract", async () => {
@@ -286,7 +286,7 @@ describe("QueryMTPValidator", () => {
 
       await expect(
         validator.verify(wrongState, newPublicSignals, newPoints.a, newPoints.b, newPoints.c, out.circuitQueryHash),
-      ).to.be.revertedWith("QueryValidator: issuer state does not exist in the state contract");
+      ).to.be.rejectedWith("QueryValidator: issuer state does not exist in the state contract");
     });
 
     async function transitState() {
@@ -324,7 +324,7 @@ describe("QueryMTPValidator", () => {
 
       await expect(
         validator.verify(statesMerkleData, publicSignals, points.a, points.b, points.c, out.circuitQueryHash),
-      ).to.be.revertedWith("QueryValidator: identites states update time has expired");
+      ).to.be.rejectedWith("QueryValidator: identites states update time has expired");
     });
 
     it("should pass if claim is not expired", async () => {
@@ -340,7 +340,7 @@ describe("QueryMTPValidator", () => {
 
   describe("#authorizeUpgrade", () => {
     it("should authorize upgrade only by owner", async () => {
-      await expect(validator.connect(FIRST).upgradeTo(ethers.ZeroAddress)).to.be.revertedWith(
+      await expect(validator.connect(FIRST).upgradeTo(ethers.ZeroAddress)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 

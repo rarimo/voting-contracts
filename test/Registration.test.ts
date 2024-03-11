@@ -169,7 +169,7 @@ describe("Registration", () => {
 
       await registration.__Registration_init(registrationParams);
 
-      await expect(registration.__Registration_init(registrationParams)).to.be.revertedWith(
+      await expect(registration.__Registration_init(registrationParams)).to.be.rejectedWith(
         "Initializable: contract is already initialized",
       );
     });
@@ -201,7 +201,7 @@ describe("Registration", () => {
         commitmentStart: 0,
       };
 
-      await expect(registration.__Registration_init(registrationParams)).to.be.revertedWith(
+      await expect(registration.__Registration_init(registrationParams)).to.be.rejectedWith(
         "Registration: commitment start must be in the future",
       );
     });
@@ -213,7 +213,7 @@ describe("Registration", () => {
         commitmentPeriod: 0,
       };
 
-      await expect(registration.__Registration_init(registrationParams)).to.be.revertedWith(
+      await expect(registration.__Registration_init(registrationParams)).to.be.rejectedWith(
         "Registration: commitment period must be greater than 0",
       );
     });

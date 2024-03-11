@@ -73,9 +73,9 @@ describe("ZKPQueriesStorage", () => {
     });
 
     it("should get exception if try to call init function twice", async () => {
-      const reason = "Initializable: the contract is already initialized";
+      const reason = "Initializable: contract is already initialized";
 
-      expect(zkpQueriesStorage.__ZKPQueriesStorage_init(LIGHTWEIGHT_STATE.address)).to.be.revertedWith(reason);
+      await expect(zkpQueriesStorage.__ZKPQueriesStorage_init(LIGHTWEIGHT_STATE.address)).to.be.rejectedWith(reason);
     });
 
     it("should get exception if pass zero lightweight state contract address", async () => {
@@ -84,12 +84,16 @@ describe("ZKPQueriesStorage", () => {
           PoseidonFacade: await poseidonFacade.getAddress(),
         },
       });
+      let newZKPQueriesStorage = await ZKPQueriesStorageFactory.deploy();
 
-      const newZKPQueriesStorage = await ZKPQueriesStorageFactory.deploy();
+      const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+      const proxy = await Proxy.deploy(await newZKPQueriesStorage.getAddress(), "0x");
+
+      newZKPQueriesStorage = newZKPQueriesStorage.attach(await proxy.getAddress()) as any;
 
       const reason = "ZKPQueriesStorage: Zero lightweightState address.";
 
-      expect(newZKPQueriesStorage.__ZKPQueriesStorage_init(ethers.ZeroAddress)).to.be.revertedWith(reason);
+      await expect(newZKPQueriesStorage.__ZKPQueriesStorage_init(ethers.ZeroAddress)).to.be.rejectedWith(reason);
     });
   });
 
@@ -124,7 +128,7 @@ describe("ZKPQueriesStorage", () => {
         circuitId: CIRCUIT_ID,
       };
 
-      expect(zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.revertedWith(reason);
+      await expect(zkpQueriesStorage.setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.rejectedWith(reason);
     });
 
     it("should get exception if nonowner try to call this function", async () => {
@@ -136,7 +140,7 @@ describe("ZKPQueriesStorage", () => {
         circuitId: CIRCUIT_ID,
       };
 
-      expect(zkpQueriesStorage.connect(FIRST).setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.revertedWith(
+      await expect(zkpQueriesStorage.connect(FIRST).setZKPQuery(REGISTER_PROOF_QUERY_ID, queryInfo)).to.be.rejectedWith(
         reason,
       );
     });
@@ -175,13 +179,13 @@ describe("ZKPQueriesStorage", () => {
       const reason = "ZKPQueriesStorage: ZKP Query does not exist.";
       const queryID = "SOME_ID";
 
-      expect(zkpQueriesStorage.removeZKPQuery(queryID)).to.be.revertedWith(reason);
+      await expect(zkpQueriesStorage.removeZKPQuery(queryID)).to.be.rejectedWith(reason);
     });
 
     it("should get exception if nonowner try to call this function", async () => {
       const reason = "Ownable: caller is not the owner";
 
-      expect(zkpQueriesStorage.connect(FIRST).removeZKPQuery(REGISTER_PROOF_QUERY_ID)).to.be.revertedWith(reason);
+      await expect(zkpQueriesStorage.connect(FIRST).removeZKPQuery(REGISTER_PROOF_QUERY_ID)).to.be.rejectedWith(reason);
     });
   });
 
@@ -228,7 +232,7 @@ describe("ZKPQueriesStorage", () => {
 
   describe("authorizeUpgrade", () => {
     it("should revert if trying to upgrade by not owner", async () => {
-      await expect(zkpQueriesStorage.connect(FIRST).upgradeTo(ethers.Wallet.createRandom().address)).to.be.revertedWith(
+      await expect(zkpQueriesStorage.connect(FIRST).upgradeTo(ethers.Wallet.createRandom().address)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
     });

@@ -89,7 +89,7 @@ describe("VotingFactory", () => {
 
   describe("#access", () => {
     it("should not initialize the contract twice", async () => {
-      await expect(votingFactory.__VotingFactory_init(await votingRegistry.getAddress())).to.be.revertedWith(
+      await expect(votingFactory.__VotingFactory_init(await votingRegistry.getAddress())).to.be.rejectedWith(
         "Initializable: contract is already initialized",
       );
     });
@@ -125,21 +125,21 @@ describe("VotingFactory", () => {
     });
 
     it("should revert if trying to create a voting or registration with non-existing type", async () => {
-      await expect(votingFactory.createVoting("Non-existing", votingParamsEncoded)).to.be.revertedWith(
+      await expect(votingFactory.createVoting("Non-existing", votingParamsEncoded)).to.be.rejectedWith(
         "VotingFactory: pool type does not exist",
       );
 
-      await expect(votingFactory.createRegistration("Non-existing", votingParamsEncoded)).to.be.revertedWith(
+      await expect(votingFactory.createRegistration("Non-existing", votingParamsEncoded)).to.be.rejectedWith(
         "VotingFactory: pool type does not exist",
       );
 
       await expect(
         votingFactory.createVotingWithSalt("Non-existing type", votingParamsEncoded, ethers.ZeroHash),
-      ).to.be.revertedWith("VotingFactory: pool type does not exist");
+      ).to.be.rejectedWith("VotingFactory: pool type does not exist");
 
       await expect(
         votingFactory.createRegistrationWithSalt("Non-existing type", votingParamsEncoded, ethers.ZeroHash),
-      ).to.be.revertedWith("VotingFactory: pool type does not exist");
+      ).to.be.rejectedWith("VotingFactory: pool type does not exist");
     });
 
     it("should create a voting with correct parameters", async () => {
@@ -218,17 +218,17 @@ describe("VotingFactory", () => {
     it("should revert if initializing a voting with invalid parameters", async () => {
       await expect(
         votingFactory.createVotingWithSalt(VOTING_TYPE, registrationParamsEncoded, ethers.ZeroHash),
-      ).to.be.revertedWith("VotingFactory: failed to initialize pool");
+      ).to.be.rejectedWith("VotingFactory: failed to initialize pool");
     });
 
     it("should revert if trying to create a voting that does not support IVotingPool interface", async () => {
-      await expect(votingFactory.createVoting(REGISTRATION_TYPE, registrationParamsEncoded)).to.be.revertedWith(
+      await expect(votingFactory.createVoting(REGISTRATION_TYPE, registrationParamsEncoded)).to.be.rejectedWith(
         "VotingFactory: voting pool does not support IVotingPool",
       );
 
       await expect(
         votingFactory.createVotingWithSalt(REGISTRATION_TYPE, registrationParamsEncoded, ethers.ZeroHash),
-      ).to.be.revertedWith("VotingFactory: voting pool does not support IVotingPool");
+      ).to.be.rejectedWith("VotingFactory: voting pool does not support IVotingPool");
     });
   });
 
@@ -237,7 +237,7 @@ describe("VotingFactory", () => {
       const VotingFactory = await ethers.getContractFactory("VotingFactory");
       const newImplementation = await VotingFactory.deploy();
 
-      await expect(votingFactory.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.revertedWith(
+      await expect(votingFactory.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.rejectedWith(
         "VotingFactory: only registry owner can upgrade",
       );
 
