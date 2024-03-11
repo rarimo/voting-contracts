@@ -4,7 +4,8 @@
 
 # Voting Contracts
 
-This repository contains contracts for managing the registration and voting processes.
+This repository contains contracts for managing the registration and voting processes, ensuring one user one anonymous 
+vote through the integration of the Rarimo protocol and zk-SNARKs.
 
 Overall, it provides registry and factory contracts that work in tandem to create instances related to the voting process, 
 also exposing necessary functions for effective UI integration.
@@ -97,6 +98,9 @@ This process is described in detail and aligned with the [project's whitepaper](
 Similar to the registration, the voting process is described in the [whitepaper](https://freedomtool.org/#/doc).
 
 For more implementation details, please refer to the `IVoting` interface and the NatSpec documentation.
+
+The probability of identifying the user's address during the registration that cast a specific vote is equal to 1/n, 
+where n is the number of registered users.
 
 ## Integration
 

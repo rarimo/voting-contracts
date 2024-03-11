@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "license": "MIT",
   "author": "Zero Block Global Foundation",
-  "description": "",
+  "description": "This repository contains contracts for managing the registration and anonymous voting processes.",
   "scripts": {
     "postinstall": "npx husky install",
     "prepack": "pinst --disable",
