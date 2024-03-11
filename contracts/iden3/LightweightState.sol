@@ -25,6 +25,10 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
     // identities states root => identities states root data
     mapping(bytes32 => IdentitiesStatesRootData) internal _identitiesStatesRootsData;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function __LightweightState_init(
         address signer_,
         address sourceStateContract_,

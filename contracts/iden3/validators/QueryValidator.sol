@@ -22,6 +22,10 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
 
     uint256 public override identitesStatesUpdateTime;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function __QueryValidator_init(
         address verifierContractAddr_,
         address stateContractAddr_,

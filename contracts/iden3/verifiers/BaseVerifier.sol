@@ -26,6 +26,10 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
     // schema => allowed issuers
     mapping(uint256 => EnumerableSet.UintSet) internal _allowedIssuers;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function __BaseVerifier_init(IZKPQueriesStorage zkpQueriesStorage_) internal onlyInitializing {
         __Ownable_init();
 

@@ -119,6 +119,9 @@ describe("Registration", () => {
     });
     zkpQueriesStorage = await ZKPQueriesStorage.deploy();
 
+    proxy = await Proxy.deploy(await zkpQueriesStorage.getAddress(), "0x");
+    zkpQueriesStorage = zkpQueriesStorage.attach(await proxy.getAddress()) as ZKPQueriesStorage;
+
     await zkpQueriesStorage.__ZKPQueriesStorage_init(await stateContract.getAddress());
 
     const RegisterVerifier = await ethers.getContractFactory("RegisterVerifier", {

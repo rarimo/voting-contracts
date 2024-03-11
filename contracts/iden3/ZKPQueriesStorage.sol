@@ -26,6 +26,10 @@ contract ZKPQueriesStorage is IZKPQueriesStorage, OwnableUpgradeable, UUPSUpgrad
 
     StringSet.Set internal _supportedQueryIds;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function __ZKPQueriesStorage_init(address lightweightStateAddr_) external initializer {
         __Ownable_init();
 
