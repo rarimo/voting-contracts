@@ -1,6 +1,6 @@
 {
   "name": "@rarimo/voting-contracts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "author": "Zero Block Global Foundation",
   "description": "This repository contains contracts for managing the anonymous registration and voting processes.",
@@ -43,7 +43,8 @@
     "lint-fix": "npm run lint-sol-fix && npm run lint-ts-fix && npm run lint-json-fix",
     "lint-json-fix": "prettier --write \"./**/*.json\"",
     "lint-ts-fix": "prettier --write \"./**/*.ts\"",
-    "lint-sol-fix": "prettier --write \"contracts/**/*.sol\""
+    "lint-sol-fix": "prettier --write \"contracts/**/*.sol\"",
+    "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh --public"
   },
   "dependencies": {
     "@iden3/contracts": "1.4.7",
