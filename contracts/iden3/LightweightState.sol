@@ -6,7 +6,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {UUPSSignableUpgradeable} from "@rarimo/evm-bridge-contracts/bridge/proxy/UUPSSignableUpgradeable.sol";
 import {Signers} from "@rarimo/evm-bridge-contracts/utils/Signers.sol";
 
-import {ILightweightState} from "../interfaces/ILightweightState.sol";
+import {ILightweightState} from "../interfaces/iden3/ILightweightState.sol";
 
 /**
  * @dev This contract is a copy of the LightweightState contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).

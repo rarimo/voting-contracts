@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {PoseidonSMT} from "../utils/PoseidonSMT.sol";
 
-import {IRegistration} from "../interfaces/IRegistration.sol";
+import {IRegistration} from "../interfaces/core/IRegistration.sol";
 
 /**
  * @title Registration Mock Contract

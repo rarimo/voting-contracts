@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {IZKPQueriesStorage} from "../../interfaces/IZKPQueriesStorage.sol";
+import {IZKPQueriesStorage} from "../../interfaces/iden3/IZKPQueriesStorage.sol";
 
 import {RegisterVerifier} from "../../iden3/verifiers/RegisterVerifier.sol";
 

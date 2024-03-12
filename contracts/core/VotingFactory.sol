@@ -10,9 +10,9 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import {IVotingPool} from "./interfaces/IVotingPool.sol";
-import {IVotingFactory} from "./interfaces/IVotingFactory.sol";
-import {IVotingRegistry} from "./interfaces/IVotingRegistry.sol";
+import {IVotingPool} from "../interfaces/core/IVotingPool.sol";
+import {IVotingFactory} from "../interfaces/core/IVotingFactory.sol";
+import {IVotingRegistry} from "../interfaces/core/IVotingRegistry.sol";
 
 /**
  * @title VotingFactory contract

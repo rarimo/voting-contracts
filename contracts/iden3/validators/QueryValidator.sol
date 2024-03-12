@@ -8,8 +8,8 @@ import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHe
 
 import {GenesisUtils} from "@iden3/contracts/lib/GenesisUtils.sol";
 
-import {ILightweightState} from "../../interfaces/ILightweightState.sol";
-import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
+import {ILightweightState} from "../../interfaces/iden3/ILightweightState.sol";
+import {IQueryValidator} from "../../interfaces/iden3/validators/IQueryValidator.sol";
 
 /**
  * @dev This contract is a copy of the QueryValidator contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
