@@ -1,11 +1,33 @@
 {
-  "name": "voting-contracts",
+  "name": "@rarimo/voting-contracts",
   "version": "0.1.0",
   "license": "MIT",
-  "author": "RarimoVoting",
-  "description": "",
+  "author": "Zero Block Global Foundation",
+  "description": "This repository contains contracts for managing the anonymous registration and voting processes.",
+  "bugs": {
+    "url": "https://github.com/rarimo/voting-contracts/issues"
+  },
+  "homepage": "https://github.com/rarimo/voting-contracts#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rarimo/voting-contracts"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart-contracts"
+  ],
+  "files": [
+    "**/*.sol",
+    "!mock/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "install": "npx husky install",
+    "prepare": "husky",
     "compile": "npx hardhat compile",
     "coverage": "npx hardhat coverage --solcoverjs ./.solcover.ts",
     "clean": "npx hardhat clean",
@@ -29,7 +51,7 @@
     "@openzeppelin/contracts-upgradeable": "4.9.5",
     "@rarimo/evm-bridge-contracts": "1.0.3",
     "@solarity/solidity-lib": "2.6.17",
-    "solidity-bytes-utils": "^0.8.2"
+    "solidity-bytes-utils": "0.8.2"
   },
   "devDependencies": {
     "@iden3/js-crypto": "^1.0.3",
@@ -42,28 +64,28 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@solarity/hardhat-habits": "^1.0.0",
     "@solarity/hardhat-markup": "^1.0.5",
-    "@solarity/hardhat-migrate": "^2.1.1",
+    "@solarity/hardhat-migrate": "^2.1.4",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.10",
-    "chai": "^4.4.1",
+    "chai": "4.4.1",
     "circomlibjs": "^0.1.7",
     "dotenv": "^16.4.1",
-    "hardhat": "^2.20.1",
+    "hardhat": "2.20.1",
     "hardhat-abi-exporter": "^2.10.1",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^1.0.9",
     "husky": "^9.0.7",
-    "mocha": "^10.2.0",
+    "mocha": "10.2.0",
     "mock-local-storage": "^1.1.24",
     "prettier": "^3.2.4",
     "prettier-plugin-solidity": "^1.3.1",
     "snarkjs": "^0.7.3",
     "solhint": "^4.1.1",
     "solhint-plugin-prettier": "^0.1.0",
-    "solidity-coverage": "0.8.9",
+    "solidity-coverage": "0.8.11",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typechain": "^8.3.2",

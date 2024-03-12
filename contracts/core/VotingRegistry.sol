@@ -10,7 +10,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 
 import {Paginator} from "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 
-import {IVotingRegistry} from "./interfaces/IVotingRegistry.sol";
+import {IVotingRegistry} from "../interfaces/core/IVotingRegistry.sol";
 
 /**
  * @title VotingRegistry contract

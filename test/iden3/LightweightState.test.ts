@@ -52,7 +52,7 @@ describe("LightweightState", () => {
     it("should not initialize twice", async () => {
       await expect(
         stateContract.__LightweightState_init(SIGNER.address, SOURCE_CHAIN_CONTRACT, CHAIN_NAME, SOURCE_CHAIN_NAME),
-      ).to.be.revertedWith("Initializable: contract is already initialized");
+      ).to.be.rejectedWith("Initializable: contract is already initialized");
     });
   });
 
@@ -106,7 +106,7 @@ describe("LightweightState", () => {
 
       const signature = SIGNER.signingKey.sign(signHash);
 
-      await expect(stateContract.changeSourceStateContract(newAddress, signature.serialized)).to.be.revertedWith(
+      await expect(stateContract.changeSourceStateContract(newAddress, signature.serialized)).to.be.rejectedWith(
         "LightweightState: Zero address",
       );
     });
@@ -148,7 +148,7 @@ describe("LightweightState", () => {
     it("should revert if trying to transit same state", async () => {
       await stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof);
 
-      await expect(stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof)).to.be.revertedWith(
+      await expect(stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof)).to.be.rejectedWith(
         "LightweightState: Identities states root already exists",
       );
     });
@@ -164,7 +164,7 @@ describe("LightweightState", () => {
 
       proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
 
-      await expect(stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof)).to.be.revertedWith(
+      await expect(stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof)).to.be.rejectedWith(
         "LightweightState: Invalid GIST root data",
       );
     });
@@ -203,7 +203,7 @@ describe("LightweightState", () => {
 
   describe("#authorizeUpgrade", () => {
     it("should revert if trying to upgrade not via signature", async () => {
-      await expect(stateContract.upgradeTo(ethers.Wallet.createRandom().address)).to.be.revertedWith(
+      await expect(stateContract.upgradeTo(ethers.Wallet.createRandom().address)).to.be.rejectedWith(
         "LightweightState: This upgrade method is off",
       );
     });
@@ -254,7 +254,7 @@ describe("LightweightState", () => {
 
       const signature = SIGNER.signingKey.sign(signHash);
 
-      await expect(stateContract.upgradeToWithSig(ethers.ZeroAddress, signature.serialized)).to.be.revertedWith(
+      await expect(stateContract.upgradeToWithSig(ethers.ZeroAddress, signature.serialized)).to.be.rejectedWith(
         "LightweightState: Zero address",
       );
     });

@@ -9,10 +9,10 @@ import {SetHelper} from "@solarity/solidity-lib/libs/arrays/SetHelper.sol";
 
 import {GenesisUtils} from "@iden3/contracts/lib/GenesisUtils.sol";
 
-import {IBaseVerifier} from "../../interfaces/verifiers/IBaseVerifier.sol";
-import {IZKPQueriesStorage} from "../../interfaces/IZKPQueriesStorage.sol";
-import {ILightweightState} from "../../interfaces/ILightweightState.sol";
-import {IQueryValidator} from "../../interfaces/IQueryValidator.sol";
+import {IBaseVerifier} from "../../interfaces/iden3/verifiers/IBaseVerifier.sol";
+import {IZKPQueriesStorage} from "../../interfaces/iden3/IZKPQueriesStorage.sol";
+import {ILightweightState} from "../../interfaces/iden3/ILightweightState.sol";
+import {IQueryValidator} from "../../interfaces/iden3/validators/IQueryValidator.sol";
 
 /**
  * @dev This contract is a copy of the BaseVerifier contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
@@ -25,6 +25,10 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
 
     // schema => allowed issuers
     mapping(uint256 => EnumerableSet.UintSet) internal _allowedIssuers;
+
+    constructor() {
+        _disableInitializers();
+    }
 
     function __BaseVerifier_init(IZKPQueriesStorage zkpQueriesStorage_) internal onlyInitializing {
         __Ownable_init();

@@ -141,6 +141,9 @@ describe("RegisterVerifier", () => {
     });
     zkpQueriesStorage = await ZKPQueriesStorage.deploy();
 
+    proxy = await Proxy.deploy(await zkpQueriesStorage.getAddress(), "0x");
+    zkpQueriesStorage = zkpQueriesStorage.attach(await proxy.getAddress()) as ZKPQueriesStorage;
+
     await zkpQueriesStorage.__ZKPQueriesStorage_init(await stateContract.getAddress());
 
     const RegisterVerifier = await ethers.getContractFactory("RegisterVerifier", {
@@ -177,7 +180,7 @@ describe("RegisterVerifier", () => {
     it("should not initialize twice", async () => {
       await expect(
         registerVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), [], []),
-      ).to.be.revertedWith("Initializable: contract is already initialized");
+      ).to.be.rejectedWith("Initializable: contract is already initialized");
     });
 
     it("should revert if trying to call inner initializer", async () => {
@@ -188,7 +191,7 @@ describe("RegisterVerifier", () => {
       });
       const registerVerifierMock = await RegisterVerifierMock.deploy();
 
-      await expect(registerVerifierMock.__BaseVerifierMock_init(ethers.ZeroAddress)).to.be.revertedWith(
+      await expect(registerVerifierMock.__BaseVerifierMock_init(ethers.ZeroAddress)).to.be.rejectedWith(
         "Initializable: contract is not initializing",
       );
     });
@@ -196,7 +199,7 @@ describe("RegisterVerifier", () => {
 
   describe("#issuer-management", () => {
     it("should set ZKPQueriesStorage only by owner", async () => {
-      await expect(registerVerifier.connect(FIRST).setZKPQueriesStorage(ethers.ZeroAddress)).to.be.revertedWith(
+      await expect(registerVerifier.connect(FIRST).setZKPQueriesStorage(ethers.ZeroAddress)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
@@ -204,7 +207,7 @@ describe("RegisterVerifier", () => {
     });
 
     it("should set identites states update time only by owner", async () => {
-      await expect(registerVerifier.connect(FIRST).updateAllowedIssuers(1, [1], true)).to.be.revertedWith(
+      await expect(registerVerifier.connect(FIRST).updateAllowedIssuers(1, [1], true)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
@@ -235,6 +238,11 @@ describe("RegisterVerifier", () => {
       });
       anotherRegisterVerifier = await RegisterVerifier.deploy();
 
+      const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+      let proxy = await Proxy.deploy(await anotherRegisterVerifier.getAddress(), "0x");
+
+      anotherRegisterVerifier = anotherRegisterVerifier.attach(await proxy.getAddress()) as RegisterVerifier;
+
       await anotherRegisterVerifier.__RegisterVerifier_init(await zkpQueriesStorage.getAddress(), whitelist, blacklist);
     });
 
@@ -257,7 +265,7 @@ describe("RegisterVerifier", () => {
 
       await expect(
         anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
-      ).to.be.revertedWith("RegisterVerifier: Issuing authority is blacklisted.");
+      ).to.be.rejectedWith("RegisterVerifier: Issuing authority is blacklisted.");
     });
 
     it("should revert if whitelist is not empty and issuer is not whitelisted", async () => {
@@ -268,7 +276,7 @@ describe("RegisterVerifier", () => {
 
       await expect(
         anotherRegisterVerifier.proveRegistration(proveIdentityParams, copyOfProofParamsStruct),
-      ).to.be.revertedWith("RegisterVerifier: Issuing authority is not whitelisted.");
+      ).to.be.rejectedWith("RegisterVerifier: Issuing authority is not whitelisted.");
     });
   });
 
@@ -367,9 +375,9 @@ describe("RegisterVerifier", () => {
           wrongProofParamsStruct,
           transitStateParams,
         ),
-      ).to.be.revertedWith("RegisterVerifier: the caller is not the voting contract.");
+      ).to.be.rejectedWith("RegisterVerifier: the caller is not the voting contract.");
 
-      await expect(registerVerifier.proveRegistration(proveIdentityParams, wrongProofParamsStruct)).to.be.revertedWith(
+      await expect(registerVerifier.proveRegistration(proveIdentityParams, wrongProofParamsStruct)).to.be.rejectedWith(
         "RegisterVerifier: the caller is not the voting contract.",
       );
     });
@@ -411,7 +419,7 @@ describe("RegisterVerifier", () => {
 
       await expect(
         registerVerifier.transitStateAndProveRegistration(proveIdentityParams, proofParamsStruct, transitStateParams),
-      ).to.be.revertedWith("RegisterVerifier: Identity is already registered.");
+      ).to.be.rejectedWith("RegisterVerifier: Identity is already registered.");
     });
 
     it("should prove identity and transit state in different transactions", async () => {
@@ -449,7 +457,7 @@ describe("RegisterVerifier", () => {
 
       await stateContract.signedTransitState(packedHash, gistData, proof);
 
-      await expect(registerVerifier.proveRegistration(proveIdentityParams, proofParamsStruct)).to.be.revertedWith(
+      await expect(registerVerifier.proveRegistration(proveIdentityParams, proofParamsStruct)).to.be.rejectedWith(
         "QueryValidator: issuer state does not exist in the state contract",
       );
     });
@@ -459,7 +467,7 @@ describe("RegisterVerifier", () => {
 
       await expect(
         registerVerifier.transitStateAndProveRegistration(proveIdentityParams, proofParamsStruct, transitStateParams),
-      ).to.be.revertedWith("RegisterVerifier: ZKP Query does not exist for passed query id.");
+      ).to.be.rejectedWith("RegisterVerifier: ZKP Query does not exist for passed query id.");
     });
 
     it("should revert if commitment is not the same as in inputs", async () => {
@@ -473,7 +481,7 @@ describe("RegisterVerifier", () => {
           wrongProofParamsStruct,
           transitStateParams,
         ),
-      ).to.be.revertedWith("RegisterVerifier: commitment does not match the requested one.");
+      ).to.be.rejectedWith("RegisterVerifier: commitment does not match the requested one.");
     });
 
     it("should revert if voting address is not the same as in inputs", async () => {
@@ -487,7 +495,7 @@ describe("RegisterVerifier", () => {
           proofParamsStruct,
           transitStateParams,
         ),
-      ).to.be.revertedWith("RegisterVerifier: registration address does not match the requested one.");
+      ).to.be.rejectedWith("RegisterVerifier: registration address does not match the requested one.");
     });
 
     it("should revert if issuer is not allowed", async () => {
@@ -499,13 +507,13 @@ describe("RegisterVerifier", () => {
 
       await expect(
         registerVerifier.transitStateAndProveRegistration(proveIdentityParams, proofParamsStruct, transitStateParams),
-      ).to.be.revertedWith("BaseVerifier: Issuer is not on the list of allowed issuers.");
+      ).to.be.rejectedWith("BaseVerifier: Issuer is not on the list of allowed issuers.");
     });
   });
 
   describe("#authorizeUpgrade", () => {
     it("should authorize upgrade only by owner", async () => {
-      await expect(registerVerifier.connect(FIRST).upgradeTo(ethers.ZeroAddress)).to.be.revertedWith(
+      await expect(registerVerifier.connect(FIRST).upgradeTo(ethers.ZeroAddress)).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 

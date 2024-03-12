@@ -37,19 +37,19 @@ describe("VotingRegistry", () => {
 
   describe("#access", () => {
     it("should not initialize the contract twice", async () => {
-      await expect(votingRegistry.__VotingRegistry_init(FACTORY.address)).to.be.revertedWith(
+      await expect(votingRegistry.__VotingRegistry_init(FACTORY.address)).to.be.rejectedWith(
         "Initializable: contract is already initialized",
       );
     });
 
     it("should call a `setNewImplementations` function only by the owner", async () => {
-      await expect(votingRegistry.connect(FIRST).setNewImplementations([], [])).to.be.revertedWith(
+      await expect(votingRegistry.connect(FIRST).setNewImplementations([], [])).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
     });
 
     it("should call a `addProxyPool` function only by the factory", async () => {
-      await expect(votingRegistry.connect(FIRST).addProxyPool("", OWNER.address, FIRST.address)).to.be.revertedWith(
+      await expect(votingRegistry.connect(FIRST).addProxyPool("", OWNER.address, FIRST.address)).to.be.rejectedWith(
         "VotingRegistry: only factory can call this function",
       );
     });
@@ -57,7 +57,7 @@ describe("VotingRegistry", () => {
     it("should call a `bindVotingToRegistration` function only by the factory", async () => {
       await expect(
         votingRegistry.connect(FIRST).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
-      ).to.be.revertedWith("VotingRegistry: only factory can call this function");
+      ).to.be.rejectedWith("VotingRegistry: only factory can call this function");
     });
   });
 
@@ -76,13 +76,13 @@ describe("VotingRegistry", () => {
     });
 
     it("should revert if names and addresses arrays have different lengths", async () => {
-      await expect(votingRegistry.connect(OWNER).setNewImplementations(["Pool Type 1"], [])).to.be.revertedWith(
+      await expect(votingRegistry.connect(OWNER).setNewImplementations(["Pool Type 1"], [])).to.be.rejectedWith(
         "VotingRegistry: names and implementations length mismatch",
       );
     });
 
     it("should revert if trying to set empty pool type", async () => {
-      await expect(votingRegistry.connect(OWNER).setNewImplementations([""], [ethers.ZeroAddress])).to.be.revertedWith(
+      await expect(votingRegistry.connect(OWNER).setNewImplementations([""], [ethers.ZeroAddress])).to.be.rejectedWith(
         "VotingRegistry: pool type cannot be empty",
       );
     });
@@ -122,7 +122,7 @@ describe("VotingRegistry", () => {
     it("should revert if trying to bind a voting to the registration that does not exist", async () => {
       await expect(
         votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
-      ).to.be.revertedWith("VotingRegistry: registration pool not found");
+      ).to.be.rejectedWith("VotingRegistry: registration pool not found");
     });
 
     it("should revert if trying to bind the same address twice", async () => {
@@ -132,7 +132,7 @@ describe("VotingRegistry", () => {
 
       await expect(
         votingRegistry.connect(FACTORY).bindVotingToRegistration(OWNER.address, OWNER.address, FIRST.address),
-      ).to.be.revertedWith("VotingRegistry: registration pool already has a voting contract");
+      ).to.be.rejectedWith("VotingRegistry: registration pool already has a voting contract");
     });
   });
 
@@ -141,7 +141,7 @@ describe("VotingRegistry", () => {
       const VotingRegistry = await ethers.getContractFactory("VotingRegistry");
       const newImplementation = await VotingRegistry.deploy();
 
-      await expect(votingRegistry.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.revertedWith(
+      await expect(votingRegistry.connect(FIRST).upgradeTo(await newImplementation.getAddress())).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 

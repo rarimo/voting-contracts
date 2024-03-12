@@ -3,11 +3,11 @@ pragma solidity 0.8.16;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import {IRegistration} from "./interfaces/IRegistration.sol";
-import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
-import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
+import {IRegistration} from "../interfaces/core/IRegistration.sol";
+import {IBaseVerifier} from "../interfaces/iden3/verifiers/IBaseVerifier.sol";
+import {IRegisterVerifier} from "../interfaces/iden3/verifiers/IRegisterVerifier.sol";
 
-import {PoseidonSMT} from "./utils/PoseidonSMT.sol";
+import {PoseidonSMT} from "../utils/PoseidonSMT.sol";
 
 /**
  * @title Registration Contract

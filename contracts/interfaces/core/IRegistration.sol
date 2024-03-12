@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {IBaseVerifier} from "./verifiers/IBaseVerifier.sol";
-import {IRegisterVerifier} from "./verifiers/IRegisterVerifier.sol";
+import {IBaseVerifier} from "../iden3/verifiers/IBaseVerifier.sol";
+import {IRegisterVerifier} from "../iden3/verifiers/IRegisterVerifier.sol";
 
 /**
  * @title IRegistration Interface

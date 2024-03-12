@@ -9,10 +9,10 @@ import {Vector} from "@solarity/solidity-lib/libs/data-structures/memory/Vector.
 
 import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
 
-import {IRegisterVerifier} from "../../interfaces/verifiers/IRegisterVerifier.sol";
-import {IZKPQueriesStorage} from "../../interfaces/IZKPQueriesStorage.sol";
-import {ILightweightState} from "../../interfaces/ILightweightState.sol";
-import {IQueryMTPValidator} from "../../interfaces/IQueryMTPValidator.sol";
+import {IRegisterVerifier} from "../../interfaces/iden3/verifiers/IRegisterVerifier.sol";
+import {IZKPQueriesStorage} from "../../interfaces/iden3/IZKPQueriesStorage.sol";
+import {ILightweightState} from "../../interfaces/iden3/ILightweightState.sol";
+import {IQueryMTPValidator} from "../../interfaces/iden3/validators/IQueryMTPValidator.sol";
 
 import {BaseVerifier} from "./BaseVerifier.sol";
 

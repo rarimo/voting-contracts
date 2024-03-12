@@ -7,11 +7,11 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {TypeCaster} from "@solarity/solidity-lib/libs/utils/TypeCaster.sol";
 import {VerifierHelper} from "@solarity/solidity-lib/libs/zkp/snarkjs/VerifierHelper.sol";
 
-import {IVoting} from "./interfaces/IVoting.sol";
-import {IVotingPool} from "./interfaces/IVotingPool.sol";
-import {IRegistration} from "./interfaces/IRegistration.sol";
-import {IBaseVerifier} from "./interfaces/verifiers/IBaseVerifier.sol";
-import {IRegisterVerifier} from "./interfaces/verifiers/IRegisterVerifier.sol";
+import {IVoting} from "../interfaces/core/IVoting.sol";
+import {IVotingPool} from "../interfaces/core/IVotingPool.sol";
+import {IRegistration} from "../interfaces/core/IRegistration.sol";
+import {IBaseVerifier} from "../interfaces/iden3/verifiers/IBaseVerifier.sol";
+import {IRegisterVerifier} from "../interfaces/iden3/verifiers/IRegisterVerifier.sol";
 
 /**
  * @title Voting Contract
