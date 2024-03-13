@@ -310,14 +310,36 @@ describe("Registration", () => {
         createdAtTimestamp: await time.latest(),
       };
 
-      const sigHash = await stateContract.getSignHash(
+      const stateHash = await stateContract.getSignHash(
         transitStateParams.gistData,
         transitStateParams.newIdentitiesStatesRoot,
       );
 
-      const signature = SIGNER.signingKey.sign(sigHash);
+      const randomMerkleProof = new Array(32)
+        .fill(ethers.ZeroHash)
+        .map((_, i) => ethers.hexlify(ethers.randomBytes(32)));
 
-      transitStateParams.proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
+      const getMerkelRoot = (proof: string[], leaf: string) => {
+        let computedHash = leaf;
+        for (let i = 0; i < proof.length; i++) {
+          const proofElement = proof[i];
+          if (computedHash <= proofElement) {
+            computedHash = ethers.solidityPackedKeccak256(["bytes32", "bytes32"], [computedHash, proofElement]);
+          } else {
+            computedHash = ethers.solidityPackedKeccak256(["bytes32", "bytes32"], [proofElement, computedHash]);
+          }
+        }
+        return computedHash;
+      };
+
+      const merkleRoot = getMerkelRoot(randomMerkleProof, stateHash);
+
+      const signature = SIGNER.signingKey.sign(merkleRoot);
+
+      transitStateParams.proof = new ethers.AbiCoder().encode(
+        ["bytes32[]", "bytes"],
+        [randomMerkleProof, signature.serialized],
+      );
 
       await registerVerifier.updateAllowedIssuers(
         ZKP_QUERY_INFO.circuitQuery.schema,
