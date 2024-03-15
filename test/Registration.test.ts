@@ -466,12 +466,14 @@ describe("Registration", () => {
 
       await registration.__Registration_init({
         ...deepClone(defaultRegistrationParams),
-        commitmentStart: (await time.latest()) + 60,
+        commitmentStart: (await time.latest()) + 300,
       });
 
       expect(await registration.getRegistrationStatus()).to.equal(RegistrationStatus.NOT_STARTED);
 
-      await time.increase(Number(defaultRegistrationParams.commitmentPeriod));
+      const registrationInfo = await registration.getRegistrationInfo();
+
+      await time.increaseTo(Number(registrationInfo["1"].commitmentStartTime));
 
       expect(await registration.getRegistrationStatus()).to.equal(RegistrationStatus.COMMITMENT);
 

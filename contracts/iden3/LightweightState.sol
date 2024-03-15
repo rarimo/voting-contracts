@@ -78,18 +78,22 @@ contract LightweightState is ILightweightState, UUPSSignableUpgradeable, Signers
             "LightweightState: Identities states root already exists"
         );
         require(
-            gistData_.createdAtTimestamp > _gistsRootData[_currentGistRoot].createdAtTimestamp,
-            "LightweightState: Invalid GIST root data"
+            _gistsRootData[gistData_.root].root == 0,
+            "LightweightState: Gist root already exists"
         );
 
         _gistsRootData[gistData_.root] = gistData_;
-        _currentGistRoot = gistData_.root;
 
-        identitiesStatesRoot = newIdentitiesStatesRoot_;
         _identitiesStatesRootsData[newIdentitiesStatesRoot_] = IdentitiesStatesRootData(
             newIdentitiesStatesRoot_,
             block.timestamp
         );
+
+        if (gistData_.createdAtTimestamp > _gistsRootData[_currentGistRoot].createdAtTimestamp) {
+            _currentGistRoot = gistData_.root;
+
+            identitiesStatesRoot = newIdentitiesStatesRoot_;
+        }
 
         emit SignedStateTransited(gistData_.root, newIdentitiesStatesRoot_);
     }

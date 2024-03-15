@@ -85,9 +85,7 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
         if (
             !lightweightState_.isIdentitiesStatesRootExists(
                 transitStateParams_.newIdentitiesStatesRoot
-            ) &&
-            currentGISTRootData_.createdAtTimestamp <
-            transitStateParams_.gistData.createdAtTimestamp
+            )
         ) {
             lightweightState_.signedTransitState(
                 transitStateParams_.newIdentitiesStatesRoot,

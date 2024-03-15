@@ -153,9 +153,12 @@ describe("LightweightState", () => {
       );
     });
 
-    it("should revert if trying to transit with invalid Gist Data", async () => {
+    it("should be able to transit an old state", async () => {
+      await stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof);
+
+      newIdentitiesStatesRoot = ethers.id("3");
       gistRootData = {
-        root: ethers.id("1"),
+        root: ethers.id("4"),
         createdAtTimestamp: 0,
       };
 
@@ -164,8 +167,23 @@ describe("LightweightState", () => {
 
       proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
 
+      await stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof);
+
+      expect(await stateContract.isIdentitiesStatesRootExists(newIdentitiesStatesRoot)).to.be.true;
+    });
+
+    it("should revert if trying to transit same gist root", async () => {
+      await stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof);
+
+      newIdentitiesStatesRoot = ethers.id("3");
+
+      const sigHash = await stateContract.getSignHash(gistRootData, newIdentitiesStatesRoot);
+      const signature = SIGNER.signingKey.sign(sigHash);
+
+      proof = new ethers.AbiCoder().encode(["bytes32[]", "bytes"], [[], signature.serialized]);
+
       await expect(stateContract.signedTransitState(newIdentitiesStatesRoot, gistRootData, proof)).to.be.rejectedWith(
-        "LightweightState: Invalid GIST root data",
+        "LightweightState: Gist root already exists",
       );
     });
 
