@@ -79,8 +79,6 @@ abstract contract BaseVerifier is IBaseVerifier, OwnableUpgradeable, UUPSUpgrade
 
     function _transitState(TransitStateParams memory transitStateParams_) internal {
         ILightweightState lightweightState_ = zkpQueriesStorage.lightweightState();
-        ILightweightState.GistRootData memory currentGISTRootData_ = lightweightState_
-            .getCurrentGISTRootInfo();
 
         if (
             !lightweightState_.isIdentitiesStatesRootExists(

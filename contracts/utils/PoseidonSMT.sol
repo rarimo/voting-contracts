@@ -11,7 +11,7 @@ contract PoseidonSMT {
     SparseMerkleTree.Bytes32SMT internal bytes32Tree;
 
     function __PoseidonSMT_init(uint256 treeHeight_) internal {
-        bytes32Tree.initialize(uint64(treeHeight_));
+        bytes32Tree.initialize(uint32(treeHeight_));
         bytes32Tree.setHashers(_hash2, _hash3);
     }
 

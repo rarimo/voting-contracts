@@ -51,7 +51,7 @@
     "@openzeppelin/contracts": "4.9.5",
     "@openzeppelin/contracts-upgradeable": "4.9.5",
     "@rarimo/evm-bridge-contracts": "1.0.3",
-    "@solarity/solidity-lib": "2.6.17",
+    "@solarity/solidity-lib": "2.7.3",
     "solidity-bytes-utils": "0.8.2"
   },
   "devDependencies": {
@@ -77,7 +77,7 @@
     "hardhat": "2.20.1",
     "hardhat-abi-exporter": "^2.10.1",
     "hardhat-contract-sizer": "^2.10.0",
-    "hardhat-gas-reporter": "^1.0.9",
+    "hardhat-gas-reporter": "^2.1.1",
     "husky": "^9.0.7",
     "mocha": "10.2.0",
     "mock-local-storage": "^1.1.24",
