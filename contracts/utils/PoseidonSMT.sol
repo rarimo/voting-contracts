@@ -3,7 +3,9 @@ pragma solidity 0.8.16;
 
 import {SparseMerkleTree} from "@solarity/solidity-lib/libs/data-structures/SparseMerkleTree.sol";
 
-import {PoseidonUnit1L, PoseidonUnit2L, PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
+import {PoseidonT2} from "../poseidons/PoseidonT2.sol";
+import {PoseidonT3} from "../poseidons/PoseidonT3.sol";
+import {PoseidonT4} from "../poseidons/PoseidonT4.sol";
 
 contract PoseidonSMT {
     using SparseMerkleTree for SparseMerkleTree.Bytes32SMT;
@@ -34,11 +36,11 @@ contract PoseidonSMT {
     }
 
     function _hash1(bytes32 element1_) internal pure returns (bytes32) {
-        return bytes32(PoseidonUnit1L.poseidon([uint256(element1_)]));
+        return bytes32(PoseidonT2.hash([uint256(element1_)]));
     }
 
     function _hash2(bytes32 element1_, bytes32 element2_) internal pure returns (bytes32) {
-        return bytes32(PoseidonUnit2L.poseidon([uint256(element1_), uint256(element2_)]));
+        return bytes32(PoseidonT3.hash([uint256(element1_), uint256(element2_)]));
     }
 
     function _hash3(
@@ -47,10 +49,6 @@ contract PoseidonSMT {
         bytes32 element3_
     ) internal pure returns (bytes32) {
         return
-            bytes32(
-                PoseidonUnit3L.poseidon(
-                    [uint256(element1_), uint256(element2_), uint256(element3_)]
-                )
-            );
+            bytes32(PoseidonT4.hash([uint256(element1_), uint256(element2_), uint256(element3_)]));
     }
 }

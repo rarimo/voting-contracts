@@ -1,6 +1,7 @@
 node_modules
 .env
 .DS_Store
+.zksolc-libraries-cache
 
 # Hardhat files
 cache
@@ -8,6 +9,9 @@ artifacts
 coverage.json
 coverage
 abi
+artifacts-zk
+cache-zk
+deployments-zk
 
 # Typechain generated files
 generated-types

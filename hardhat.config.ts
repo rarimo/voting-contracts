@@ -3,6 +3,9 @@ import "@nomicfoundation/hardhat-chai-matchers";
 
 import "@typechain/hardhat";
 
+import "@matterlabs/hardhat-zksync-solc";
+import "@matterlabs/hardhat-zksync-deploy";
+
 import "@solarity/hardhat-migrate";
 import "@solarity/hardhat-markup";
 
@@ -24,6 +27,9 @@ function privateKey() {
 }
 
 const config: HardhatUserConfig = {
+  paths: {
+    deployPaths: "deploy-zkSync",
+  },
   networks: {
     hardhat: {
       initialDate: "1970-01-01T00:00:00Z",
@@ -49,6 +55,11 @@ const config: HardhatUserConfig = {
       accounts: privateKey(),
       gasMultiplier: 1.2,
     },
+    zkTestnet: {
+      url: "https://sepolia.era.zksync.dev",
+      ethNetwork: "sepolia",
+      zksync: true,
+    },
   },
   solidity: {
     version: "0.8.16",
@@ -56,6 +67,24 @@ const config: HardhatUserConfig = {
       optimizer: {
         enabled: true,
         runs: 200,
+      },
+    },
+  },
+  zksolc: {
+    settings: {
+      forceEvmla: true,
+      libraries: {
+        // zkSync Testnet
+        "@iden3/contracts/lib/Poseidon.sol": {
+          PoseidonUnit1L: "0x0000000000000000000000000000000000000001",
+          PoseidonUnit2L: "0x0000000000000000000000000000000000000001",
+          PoseidonUnit3L: "0x0000000000000000000000000000000000000001",
+          PoseidonUnit4L: "0x0000000000000000000000000000000000000001",
+          PoseidonUnit5L: "0x0000000000000000000000000000000000000001",
+          PoseidonUnit6L: "0x0000000000000000000000000000000000000001",
+          SpongePoseidon: "0x0000000000000000000000000000000000000001",
+          PoseidonFacade: "0x0000000000000000000000000000000000000001",
+        },
       },
     },
   },

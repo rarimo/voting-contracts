@@ -7,14 +7,14 @@ import {SetHelper} from "@solarity/solidity-lib/libs/arrays/SetHelper.sol";
 import {Paginator} from "@solarity/solidity-lib/libs/arrays/Paginator.sol";
 import {Vector} from "@solarity/solidity-lib/libs/data-structures/memory/Vector.sol";
 
-import {PoseidonUnit3L} from "@iden3/contracts/lib/Poseidon.sol";
+import {BaseVerifier} from "./BaseVerifier.sol";
 
 import {IRegisterVerifier} from "../../interfaces/iden3/verifiers/IRegisterVerifier.sol";
 import {IZKPQueriesStorage} from "../../interfaces/iden3/IZKPQueriesStorage.sol";
 import {ILightweightState} from "../../interfaces/iden3/ILightweightState.sol";
 import {IQueryMTPValidator} from "../../interfaces/iden3/validators/IQueryMTPValidator.sol";
 
-import {BaseVerifier} from "./BaseVerifier.sol";
+import {PoseidonT4} from "../../poseidons/PoseidonT4.sol";
 
 /**
  * @title RegisterVerifier contract
@@ -180,7 +180,7 @@ contract RegisterVerifier is IRegisterVerifier, BaseVerifier {
             .getStoredCircuitQuery(queryId_);
 
         uint256[] memory values_ = new uint256[](1);
-        values_[0] = PoseidonUnit3L.poseidon(
+        values_[0] = PoseidonT4.hash(
             [
                 1, // Is Adult should be always 1
                 registerProofInfo_.registerProofParams.issuingAuthority,

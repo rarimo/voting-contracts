@@ -31,6 +31,7 @@ import {
 
 import {
   ILightweightState,
+  IRegistration,
   LightweightState,
   PoseidonUnit3L,
   QueryMTPValidator,
@@ -38,10 +39,10 @@ import {
   Registration,
   ZKPQueriesStorage,
 } from "@ethers-v6";
-import { VerifierHelper } from "@/generated-types/contracts/Voting";
-import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
+import { VerifierHelper } from "@/generated-types/contracts/core/Voting";
 import { IZKPQueriesStorage } from "@/generated-types/contracts/iden3/ZKPQueriesStorage";
-import { IBaseVerifier, IRegistration } from "@/generated-types/contracts/Registration";
+import { IBaseVerifier } from "@/generated-types/contracts/interfaces/core/IRegistration";
+import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
 
 describe("Registration", () => {
   const reverter = new Reverter();
