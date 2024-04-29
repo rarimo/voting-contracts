@@ -5,7 +5,7 @@ import { VotingRegistry__factory, ZKPQueriesStorage__factory } from "@ethers-v6"
 import { Config, getDeployedQueryValidatorContract, getDeployedVerifierContract, parseConfig } from "@deploy-helper";
 
 export = async (deployer: Deployer) => {
-  const config: Config = parseConfig();
+  const config: Config = parseConfig(process.env.CONFIG_PATH!);
 
   const baseVerifier = await getDeployedVerifierContract(deployer);
   const queryValidator = await getDeployedQueryValidatorContract(deployer);

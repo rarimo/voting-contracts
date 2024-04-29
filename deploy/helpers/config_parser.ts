@@ -59,7 +59,7 @@ export type ZKPQuery = {
   values: bigint[];
 };
 
-export function parseConfig(configPath: string = "deploy/data/config.json"): Config {
+export function parseConfig(configPath: string): Config {
   const config: Config = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Config;
 
   if (config.stateContractInfo.stateAddr == undefined && config.stateContractInfo.stateInitParams == undefined) {

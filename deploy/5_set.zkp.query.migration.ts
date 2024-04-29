@@ -12,7 +12,7 @@ import {
 import { IZKPQueriesStorage, ZKPQueriesStorage__factory } from "@ethers-v6";
 
 export = async (deployer: Deployer) => {
-  const config: Config = parseConfig();
+  const config: Config = parseConfig(process.env.CONFIG_PATH!);
 
   const registryVerifier = await getDeployedVerifierContract(deployer);
   const zkpQueriesStorage = await deployer.deployed(ZKPQueriesStorage__factory, "ZKPQueriesStorage Proxy");

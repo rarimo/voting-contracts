@@ -13,7 +13,7 @@ import {
 import { ERC1967Proxy__factory, ZKPQueriesStorage__factory, PoseidonFacade__factory } from "@ethers-v6";
 
 export = async (deployer: Deployer) => {
-  const config: Config = parseConfig();
+  const config: Config = parseConfig(process.env.CONFIG_PATH!);
 
   const poseidonFacade = await deployer.deployed(PoseidonFacade__factory);
 
