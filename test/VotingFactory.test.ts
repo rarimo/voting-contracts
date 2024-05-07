@@ -10,8 +10,8 @@ import { getPoseidon, Reverter } from "@test-helpers";
 import { IMPLEMENTATION_SLOT, wei } from "@scripts";
 
 import { VotingFactory, VotingRegistry, RegistrationMock, Voting__factory, Registration__factory } from "@ethers-v6";
-import { IVoting } from "@/generated-types/contracts/Voting";
-import { IRegistration } from "@/generated-types/contracts/Registration";
+import { IVoting } from "@/generated-types/contracts/core/Voting";
+import { IRegistration } from "@/generated-types/contracts/core/Registration";
 
 describe("VotingFactory", () => {
   const reverter = new Reverter();

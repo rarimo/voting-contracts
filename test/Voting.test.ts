@@ -17,7 +17,7 @@ import {
 } from "@test-helpers";
 
 import { IVoting, VoteVerifier, RegistrationMock, Voting } from "@ethers-v6";
-import { VerifierHelper } from "@/generated-types/contracts/Voting";
+import { VerifierHelper } from "@/generated-types/contracts/core/Voting";
 
 describe("Voting", () => {
   const reverter = new Reverter();

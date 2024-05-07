@@ -26,7 +26,7 @@ import {
 } from "@test-helpers";
 
 import { ILightweightState, LightweightState, QueryMTPValidator } from "@ethers-v6";
-import { VerifierHelper } from "@/generated-types/contracts/Voting";
+import { VerifierHelper } from "@/generated-types/contracts/core/Voting";
 
 describe("QueryMTPValidator", () => {
   const reverter = new Reverter();

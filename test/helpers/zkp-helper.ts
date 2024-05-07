@@ -6,7 +6,7 @@ import { ethers } from "hardhat";
 import { poseidonHash } from "@/test/helpers/poseidon-hash";
 import { CredentialAtomicMTPOnChainV2Inputs } from "@/test/helpers/iden3";
 
-import { VerifierHelper } from "@/generated-types/contracts/Voting";
+import { VerifierHelper } from "@/generated-types/contracts/core/Voting";
 
 export interface SecretPair {
   secret: string;

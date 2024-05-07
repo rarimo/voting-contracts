@@ -37,8 +37,8 @@ import {
   RegisterVerifier,
   ZKPQueriesStorage,
 } from "@ethers-v6";
-import { VerifierHelper } from "@/generated-types/contracts/Voting";
-import { IBaseVerifier } from "@/generated-types/contracts/Registration";
+import { VerifierHelper } from "@/generated-types/contracts/core/Voting";
+import { IBaseVerifier } from "@/generated-types/contracts/core/Registration";
 import { IZKPQueriesStorage } from "@/generated-types/contracts/iden3/ZKPQueriesStorage";
 import { IRegisterVerifier } from "@/generated-types/contracts/iden3/verifiers/RegisterVerifier";
 
