@@ -12,8 +12,8 @@ interface IQueryValidator {
         uint256 gistRoot;
         uint256 issuerId;
         uint256 issuerClaimAuthState;
-        uint256 issuerClaimNonRevState;
         uint256 isRevocationChecked;
+        uint256 issuerClaimNonRevState;
     }
 
     function setVerifier(address newVerifier_) external;

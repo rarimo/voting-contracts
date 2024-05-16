@@ -72,8 +72,8 @@ contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
                 inputs_[5],
                 inputs_[6],
                 inputs_[7],
-                inputs_[9],
-                inputs_[10]
+                inputs_[8],
+                inputs_[9]
             );
     }
 }
