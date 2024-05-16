@@ -28,6 +28,7 @@ export async function generateMTPData(
   mz: Merklizer,
   gistData: { id: bigint; state: bigint }[],
   claimSalt = 0n,
+  isToCheckRevocation = true,
 ): Promise<[CredentialAtomicMTPOnChainV2Inputs, CredentialAtomicMTPOnChainV2Outputs]> {
   const schemaHash = SchemaHash.newSchemaHashFromInt(REGISTRATION_CLAIM_SCHEMA_ID);
 
@@ -109,7 +110,7 @@ export async function generateMTPData(
     issuerClaimRootsTreeRoot: (await issuer.rootsTree.root()).bigInt(),
     issuerClaimIdenState: await issuer.state(),
 
-    isRevocationChecked: 1,
+    isRevocationChecked: isToCheckRevocation ? 1 : 0,
     issuerClaimNonRevClaimsTreeRoot: (await issuer.claimTree.root()).bigInt(),
     issuerClaimNonRevRevTreeRoot: (await issuer.revTree.root()).bigInt(),
     issuerClaimNonRevRootsTreeRoot: (await issuer.rootsTree.root()).bigInt(),
