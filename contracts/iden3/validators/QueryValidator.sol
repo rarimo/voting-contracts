@@ -67,7 +67,8 @@ abstract contract QueryValidator is IQueryValidator, OwnableUpgradeable, UUPSUpg
         );
 
         require(
-            validationParams_.issuerClaimAuthState == validationParams_.issuerClaimNonRevState,
+            validationParams_.issuerClaimAuthState == validationParams_.issuerClaimNonRevState ||
+                validationParams_.isRevocationChecked == 0,
             "QueryValidator: only actual states must be used"
         );
         require(

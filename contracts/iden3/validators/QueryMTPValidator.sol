@@ -6,6 +6,8 @@ import {QueryValidator} from "./QueryValidator.sol";
 import {IQueryValidator} from "../../interfaces/iden3/validators/IQueryValidator.sol";
 import {IQueryMTPValidator} from "../../interfaces/iden3/validators/IQueryMTPValidator.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @dev This contract is a copy of the QueryMTPValidator contract from Rarimo [identity-contracts repository](https://github.com/rarimo/identity-contracts/tree/aeb929ccc3fa8ab508fd7576f9fa853a081e5010).
  */
@@ -66,6 +68,14 @@ contract QueryMTPValidator is IQueryMTPValidator, QueryValidator {
     function _getInputValidationParameters(
         uint256[] memory inputs_
     ) internal pure override returns (ValidationParams memory) {
-        return ValidationParams(inputs_[2], inputs_[5], inputs_[6], inputs_[7], inputs_[9]);
+        return
+            ValidationParams(
+                inputs_[2],
+                inputs_[5],
+                inputs_[6],
+                inputs_[7],
+                inputs_[9],
+                inputs_[10]
+            );
     }
 }

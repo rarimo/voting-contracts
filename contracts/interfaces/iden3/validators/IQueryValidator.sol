@@ -13,6 +13,7 @@ interface IQueryValidator {
         uint256 issuerId;
         uint256 issuerClaimAuthState;
         uint256 issuerClaimNonRevState;
+        uint256 isRevocationChecked;
     }
 
     function setVerifier(address newVerifier_) external;
